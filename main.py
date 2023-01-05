@@ -43,6 +43,9 @@ class MainClass:
         self.width_window=672
         self.height_window=425
 
+        self.invoiceData="A"
+        self.payedData='A'
+
 
         self.export_folder=None
 
@@ -410,12 +413,12 @@ class MainClass:
         combobox_Number_Columns=ct.CTkComboBox(mainFrame, values=rows, command=self.valueChangedNumOfCol)
         combobox_Number_Columns.grid( row=10, column=0, padx=20, pady=5)
 
-        buttonSelectColumns = ct.CTkButton(mainFrame, text="Select Columns",
-                                           command=lambda: self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns, labelSelectedColumns))
-        buttonSelectColumns.grid(row=10, column=1, padx=20, pady=5)
+        # buttonSelectColumns = ct.CTkButton(mainFrame, text="Select Columns",
+        #                                   command=lambda: self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns, labelSelectedColumns))
+        # buttonSelectColumns.grid(row=10, column=1, padx=20, pady=5)
 
-        self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns,
-                           labelSelectedColumns)
+        # self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns,
+        #                    labelSelectedColumns)
 
 
 
@@ -453,6 +456,12 @@ class MainClass:
         buttonSynchronize.grid(row=12, column=0, columnspan=2, padx=20, pady=0)
 
 
+        dataA= ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFrom, width=100)
+        dataB=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnTo, width=100)
+        dataA.set("Invoice Column")
+        dataB.set("Payed column")
+        dataA.grid(row=5, column=2, padx=5)
+        dataB.grid(row=5, column=3, padx=5)
 
 
         root.mainloop()
@@ -559,29 +568,68 @@ class MainClass:
 
 
     def Synchronize(self, alphabet, label, progress):
-        if self.sheetFirst != None and self.sheetSecond != None and len(self.indexColumnsTo) != 0 and len(self.indexColumnsFrom) != 0:
+        if self.sheetFirst != None and self.sheetSecond != None :
 
             KEY_A = 0
             KEY_B = 0
             DATA_A = 0
             DATA_B = 0
-            all=0
 
+            for i in range( len(alphabet)):
+                if alphabet[i]==self.colKeyA:
+                    KEY_A = i
+                if alphabet[i] == self.colKeyB:
+                    KEY_B = i
+                if alphabet[i] == self.invoiceData:
+                    DATA_A=i
+                if alphabet[i]== self.payedData:
+                    DATA_B=i
 
             fromTable1 = openpyxl.load_workbook(self.firstfileF2)
             fromTable2 = openpyxl.load_workbook(self.secondfileF2)
-            fromSheet = fromTable1[self.sheetFirst]
-            toSheet = fromTable2[self.sheetSecond]
+            fromSheet1 = fromTable1[self.sheetFirst]
+            fromSheet2= fromTable2[self.sheetSecond]
 
-            thirdTable= openpyxl.Workbook()
-            third_sheet=thirdTable.create_sheet("Result")
+            thirdTable = openpyxl.Workbook()
+            third_sheet = thirdTable.create_sheet("Result")
+            path = self.export_folder + "OutputResult.xlsx"
+            thirdTable.save(path)
+            thirdTable.close()
+            thirdTable = openpyxl.load_workbook(path)
+            third_sheet = thirdTable['Sheet']
+            self.copy_sheet(fromSheet1, third_sheet)
 
-            self.copy_sheet(fromSheet, third_sheet)
+
+            # thirdTable.save("third.xlsx")
+            # print("Succesfull")
+            arr=[]
+            for i in fromSheet2.iter_rows():
+                arr.append(i)
+            start1 = int(self.startB)
+            if int(self.endB) == 1:
+                end1 = len(arr)
+            else:
+                end1 = int(self.endB)
 
 
-            thirdTable.save("third.xlsx")
-            print("Succesfull")
-            exit()
+            for i in fromSheet1.iter_rows():
+                for o in third_sheet.iter_rows():
+                    print(o[0].value)
+                id = i[KEY_A].value[3:]
+                row_number = i[KEY_A-1].row
+                if row_number >= start1 and row_number <= end1:
+                    for j in fromSheet2.iter_rows():
+                        if j[KEY_B].value == id:
+                            if j[DATA_A].value !="None":
+                                third_sheet.cell(row=row_number, column=16).value = j[DATA_A].value
+
+                            break
+            thirdTable.save(path)
+
+
+
+
+
 
 
 
@@ -609,139 +657,135 @@ class MainClass:
             #                     toSheet.cell(row=row_numb, column=DATA_B).value = j[DATA_A-1].value
             #                     break
 
-            label.configure(text="Synchronization completed!", text_color='green')
-            if self.TwoOrOne=="Two":
-
-                fromTable2.save(self.secondfileF2)
-            else:
-                fromTable1.save(self.onefileF2)
-
-
-
-    def selectColumns(self, window, numbers, this, root, combobox, label):
-
-        combobox.configure(state='disabled')
-        label.grid(row=4, column=2, columnspan=2, padx=10, pady=4)
-        self.width_window = 631
-        self.height_window = 465
-        # create label on CTkToplevel window
-        if len(self.indexColumnsFrom) < self.num_of_col:
-            #self.columnsFrom.clear()
-            j=0
-            leng=len(self.columnsFrom)
-            col=2
-            self.width_window=631
-            self.height_window=465
-            while j < self.num_of_col:
-
-                if j % 11 == 0 and j != 0:
-                    col += 2
-                    self.width_window += 210
-                if j == 3:
-                    self.height_window += 10
-                if j > 4 and j < 6:
-                    self.height_window += 30
-                if j >= 6 and j < 11:
-                    self.height_window += 16
-
-                row = j % 11
-                if(j>=leng):
-                    self.columnsFrom.append(ct.CTkComboBox(window, values=numbers, command=lambda event, l=j: self.valueChangedColumnFrom(event, l), width=100))
-                    if j == len(self.indexColumnsFrom):
-                        self.indexColumnsFrom.append('A')
-                    self.columnsFrom[j].set(str(j+1) +". From")
-
-                self.columnsFrom[j].grid(row=row+5, column=col, padx=5)
-                j += 1
-            this.configure(text="Hide columns")
-            root.geometry(str(self.width_window)+"x"+str(self.height_window))
-            root.update()
-            combobox.configure(state='disabled')
-            combobox.update()
-
-        else:
-            if self.flag:
-                this.configure(text="Show columns")
-                #root.geometry("375x425")
-                root.update()
-                for j in range(self.num_of_col):
-                    self.columnsFrom[j].grid_forget()
-                root.geometry("671x465")
-                combobox.configure(state='normal')
-                combobox.update()
-                label.grid_forget()
-
-            else:
-                this.configure(text="Hide columns")
-                #root.geometry(str(self.width_window)+"x"+str(self.height_window))
-                root.update()
-                self.width_window = 631
-                self.height_window = 465
-                j = 0
-                col = 2
-                while j < self.num_of_col:
-
-                    if j % 11 == 0 and j != 0:
-                        col += 2
-                        self.width_window += 210
-                    if j == 3:
-                        self.height_window += 10
-                    if j > 4 and j < 6:
-                        self.height_window += 35
-                    if j>=6 and j<11:
-                        self.height_window += 5
+            # label.configure(text="Synchronization completed!", text_color='green')
+            # if self.TwoOrOne=="Two":
+            #
+            #     fromTable2.save(self.secondfileF2)
+            # else:
+            #     fromTable1.save(self.onefileF2)
 
 
-                    row = j % 11
-                    self.columnsFrom[j].grid(row=row+5, column=col, padx=5)
-                    j+=1
-                combobox.configure(state='disabled')
-                root.geometry(str(self.width_window) + "x" + str(self.height_window))
-                combobox.update()
 
-        if len(self.indexColumnsTo) < self.num_of_col :
-            #self.columnsTo.clear()
-            j = 0
-            leng = len(self.columnsTo)
-            col = 3
-            while j < self.num_of_col:
-                if j % 11 == 0 and j != 0:
-                    col += 2
-                row = j % 11
-                if (j >= leng):
-                    self.columnsTo.append(ct.CTkComboBox(window, values=numbers, command=lambda event, l=j: self.valueChangedColumnTo(event, l), width=100))
-                    if j == len(self.indexColumnsTo):
-                        self.indexColumnsTo.append('A')
-                    self.columnsTo[j].set(str(j+1) +". To")
-                self.columnsTo[j].grid(row=row+5, column=col, padx=5)
-                j += 1
-            self.flag = True
+    # def selectColumns(self, window, numbers, this, root, combobox, label):
+    #
+    #     combobox.configure(state='disabled')
+    #     label.grid(row=4, column=2, columnspan=2, padx=10, pady=4)
+    #     self.width_window = 631
+    #     self.height_window = 465
+    #     # create label on CTkToplevel window
+    #     if len(self.indexColumnsFrom) < self.num_of_col:
+    #         #self.columnsFrom.clear()
+    #         j=0
+    #         leng=len(self.columnsFrom)
+    #         col=2
+    #         self.width_window=631
+    #         self.height_window=465
+    #         while j < self.num_of_col:
+    #
+    #             if j % 11 == 0 and j != 0:
+    #                 col += 2
+    #                 self.width_window += 210
+    #             if j == 3:
+    #                 self.height_window += 10
+    #             if j > 4 and j < 6:
+    #                 self.height_window += 30
+    #             if j >= 6 and j < 11:
+    #                 self.height_window += 16
+    #
+    #             row = j % 11
+    #             if(j>=leng):
+    #
+    #             j += 1
+    #         this.configure(text="Hide columns")
+    #         root.geometry(str(self.width_window)+"x"+str(self.height_window))
+    #         root.update()
+    #         combobox.configure(state='disabled')
+    #         combobox.update()
+    #
+    #     else:
+    #         if self.flag:
+    #             this.configure(text="Show columns")
+    #             #root.geometry("375x425")
+    #             root.update()
+    #             for j in range(self.num_of_col):
+    #                 self.columnsFrom[j].grid_forget()
+    #             root.geometry("671x465")
+    #             combobox.configure(state='normal')
+    #             combobox.update()
+    #             label.grid_forget()
+    #
+    #         else:
+    #             this.configure(text="Hide columns")
+    #             #root.geometry(str(self.width_window)+"x"+str(self.height_window))
+    #             root.update()
+    #             self.width_window = 631
+    #             self.height_window = 465
+    #             j = 0
+    #             col = 2
+    #             while j < self.num_of_col:
+    #
+    #                 if j % 11 == 0 and j != 0:
+    #                     col += 2
+    #                     self.width_window += 210
+    #                 if j == 3:
+    #                     self.height_window += 10
+    #                 if j > 4 and j < 6:
+    #                     self.height_window += 35
+    #                 if j>=6 and j<11:
+    #                     self.height_window += 5
+    #
+    #
+    #                 row = j % 11
+    #                 self.columnsFrom[j].grid(row=row+5, column=col, padx=5)
+    #                 j+=1
+    #             combobox.configure(state='disabled')
+    #             root.geometry(str(self.width_window) + "x" + str(self.height_window))
+    #             combobox.update()
+    #
+    #     if len(self.indexColumnsTo) < self.num_of_col :
+    #         #self.columnsTo.clear()
+    #         j = 0
+    #         leng = len(self.columnsTo)
+    #         col = 3
+    #         while j < self.num_of_col:
+    #             if j % 11 == 0 and j != 0:
+    #                 col += 2
+    #             row = j % 11
+    #             if (j >= leng):
+    #                 self.columnsTo.append(ct.CTkComboBox(window, values=numbers, command=lambda event, l=j: self.valueChangedColumnTo(event, l), width=100))
+    #                 if j == len(self.indexColumnsTo):
+    #                     self.indexColumnsTo.append('A')
+    #                 self.columnsTo[j].set(str(j+1) +". To")
+    #             self.columnsTo[j].grid(row=row+5, column=col, padx=5)
+    #             j += 1
+    #         self.flag = True
+    #
+    #     else:
+    #         if self.flag:
+    #             for j in range(self.num_of_col):
+    #                 self.columnsTo[j].grid_remove()
+    #             self.flag = False
+    #         else:
+    #             j = 0
+    #             col = 3
+    #             for j in range(self.num_of_col):
+    #                 if j % 11 == 0 and j != 0:
+    #                     col += 2
+    #                 row = j % 11
+    #                 self.columnsTo[j].grid(row=row+5, column=col, padx=5)
+    #                 #self.columnsTo[j].set(self.indexColumnsTo[])
+    #             self.flag = True
+    #     print(self.indexColumnsFrom)
+    #     print(self.indexColumnsTo)
 
-        else:
-            if self.flag:
-                for j in range(self.num_of_col):
-                    self.columnsTo[j].grid_remove()
-                self.flag = False
-            else:
-                j = 0
-                col = 3
-                for j in range(self.num_of_col):
-                    if j % 11 == 0 and j != 0:
-                        col += 2
-                    row = j % 11
-                    self.columnsTo[j].grid(row=row+5, column=col, padx=5)
-                    #self.columnsTo[j].set(self.indexColumnsTo[])
-                self.flag = True
-        print(self.indexColumnsFrom)
-        print(self.indexColumnsTo)
 
+    def valueChangedColumnFrom(self,event):
+        self.invoiceData=event
+        print(self.invoiceData)
 
-    def valueChangedColumnFrom(self,event, index):
-        self.indexColumnsFrom[index]=event
-        print(self.indexColumnsFrom)
-    def valueChangedColumnTo(self, event, index):
-        self.indexColumnsTo[index]=event
-        print(self.indexColumnsTo)
+    def valueChangedColumnTo(self, event):
+        self.payedData=event
+        print(self.payedData)
 
     def sheetChangedOne(self, event):
         self.sheetFirst = event
