@@ -5,12 +5,20 @@ import openpyxl
 import pyexcel
 from PIL import JpegImagePlugin
 import pyexcel_io
+
+from Client import Client
+
 ct.set_appearance_mode('dark')
 ct.set_default_color_theme("dark-blue")
 JpegImagePlugin._getmp = lambda x: None
 
 class MainClass:
     def __init__(self):
+
+        self.Clients=[]
+
+
+
 
         # function 2
         self.sheetFirst=None
@@ -43,9 +51,10 @@ class MainClass:
         self.width_window=672
         self.height_window=425
 
-        self.invoiceData="A"
-        self.payedData='A'
+        self.invoiceDataFrom="A"
+        self.invoiceDataTo='A'
 
+        self.invoiceDataFromB='A'
 
         self.export_folder=None
 
@@ -456,12 +465,16 @@ class MainClass:
         buttonSynchronize.grid(row=12, column=0, columnspan=2, padx=20, pady=0)
 
 
-        dataA= ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFrom, width=100)
-        dataB=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnTo, width=100)
-        dataA.set("Invoice Column")
-        dataB.set("Payed column")
-        dataA.grid(row=5, column=2, padx=5)
-        dataB.grid(row=5, column=3, padx=5)
+        AccountNumberFromA= ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromA, width=150)
+        AccountNumberTo=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnToA, width=150)
+        AccountNumberFromB=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromB, width=150)
+        AccountNumberFromA.set("Invoice from column ")
+        AccountNumberTo.set("Invoice to column")
+        AccountNumberFromB.set("Payed from column")
+        AccountNumberFromA.grid(row=5, column=2, padx=5)
+        AccountNumberTo.grid(row=6, column=2, padx=5)
+        AccountNumberFromB.grid(row=7, column=2, padx=5)
+
 
 
         root.mainloop()
@@ -568,22 +581,30 @@ class MainClass:
 
 
     def Synchronize(self, alphabet, label, progress):
-        if self.sheetFirst != None and self.sheetSecond != None :
+        if self.sheetFirst != None and self.sheetSecond != None and self.export_folder != None :
 
             KEY_A = 0
             KEY_B = 0
-            DATA_A = 0
-            DATA_B = 0
+            INVOICE_NUMBER_FROM_A = 0
+            INVOICE_NUMBER_TO_A = 0
+            INVOICE_NUMBER_FROM_B = 0
+
+
 
             for i in range( len(alphabet)):
                 if alphabet[i]==self.colKeyA:
                     KEY_A = i
                 if alphabet[i] == self.colKeyB:
                     KEY_B = i
-                if alphabet[i] == self.invoiceData:
-                    DATA_A=i
-                if alphabet[i]== self.payedData:
-                    DATA_B=i
+                if alphabet[i] == self.invoiceDataFrom:
+                    INVOICE_NUMBER_FROM_A=i
+                if alphabet[i]== self.invoiceDataTo:
+                    INVOICE_NUMBER_TO_A = i
+                if alphabet[i] == self.invoiceDataFromB:
+                    INVOICE_NUMBER_FROM_B = i
+
+            INVOICE_NUMBER_FROM_B +=1
+            INVOICE_NUMBER_TO_A+=1
 
             fromTable1 = openpyxl.load_workbook(self.firstfileF2)
             fromTable2 = openpyxl.load_workbook(self.secondfileF2)
@@ -610,7 +631,9 @@ class MainClass:
                 end1 = len(arr)
             else:
                 end1 = int(self.endB)
-
+            third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2).value = "Payment rest"
+            third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).value = "Payment status"
+            third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).value = "Paid amount"
 
             for i in fromSheet1.iter_rows():
                 for o in third_sheet.iter_rows():
@@ -620,10 +643,45 @@ class MainClass:
                 if row_number >= start1 and row_number <= end1:
                     for j in fromSheet2.iter_rows():
                         if j[KEY_B].value == id:
-                            if j[DATA_A].value !="None":
-                                third_sheet.cell(row=row_number, column=16).value = j[DATA_A].value
+                            if j[INVOICE_NUMBER_FROM_A].value !="None":
+
+
+                                sum = j[INVOICE_NUMBER_FROM_A].value
+
+
+                                if float(sum) == float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value):
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1).value="PAID"
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = sum
+                                    self.Clients.append(Client(id))
+
+
+                                elif float(sum) < float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value) and float(sum)!=0:
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1).value = "PARTIALLY PAID"
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = sum
+                                    self.Clients.append(Client(id))
+
+                                elif float(sum) == 0:
+                                    third_sheet.cell(row=row_number,
+                                                     column=INVOICE_NUMBER_TO_A + 1).value = "UNPAID"
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = 0
+                                    self.Clients.append(Client(id))
+
+
+                                elif float(sum) > float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value):
+                                    rest=float(sum)-float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+                                    third_sheet.cell(row=row_number,
+                                                     column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = \
+                                        float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value = rest
+                                    self.Clients.append(Client(id, rest))
+
+                                else:
+                                    third_sheet.cell(row=row_number,
+                                                     column=INVOICE_NUMBER_TO_A + 1).value = "NOT FOUND"
 
                             break
+            print(self.Clients)
             thirdTable.save(path)
 
 
@@ -666,126 +724,18 @@ class MainClass:
 
 
 
-    # def selectColumns(self, window, numbers, this, root, combobox, label):
-    #
-    #     combobox.configure(state='disabled')
-    #     label.grid(row=4, column=2, columnspan=2, padx=10, pady=4)
-    #     self.width_window = 631
-    #     self.height_window = 465
-    #     # create label on CTkToplevel window
-    #     if len(self.indexColumnsFrom) < self.num_of_col:
-    #         #self.columnsFrom.clear()
-    #         j=0
-    #         leng=len(self.columnsFrom)
-    #         col=2
-    #         self.width_window=631
-    #         self.height_window=465
-    #         while j < self.num_of_col:
-    #
-    #             if j % 11 == 0 and j != 0:
-    #                 col += 2
-    #                 self.width_window += 210
-    #             if j == 3:
-    #                 self.height_window += 10
-    #             if j > 4 and j < 6:
-    #                 self.height_window += 30
-    #             if j >= 6 and j < 11:
-    #                 self.height_window += 16
-    #
-    #             row = j % 11
-    #             if(j>=leng):
-    #
-    #             j += 1
-    #         this.configure(text="Hide columns")
-    #         root.geometry(str(self.width_window)+"x"+str(self.height_window))
-    #         root.update()
-    #         combobox.configure(state='disabled')
-    #         combobox.update()
-    #
-    #     else:
-    #         if self.flag:
-    #             this.configure(text="Show columns")
-    #             #root.geometry("375x425")
-    #             root.update()
-    #             for j in range(self.num_of_col):
-    #                 self.columnsFrom[j].grid_forget()
-    #             root.geometry("671x465")
-    #             combobox.configure(state='normal')
-    #             combobox.update()
-    #             label.grid_forget()
-    #
-    #         else:
-    #             this.configure(text="Hide columns")
-    #             #root.geometry(str(self.width_window)+"x"+str(self.height_window))
-    #             root.update()
-    #             self.width_window = 631
-    #             self.height_window = 465
-    #             j = 0
-    #             col = 2
-    #             while j < self.num_of_col:
-    #
-    #                 if j % 11 == 0 and j != 0:
-    #                     col += 2
-    #                     self.width_window += 210
-    #                 if j == 3:
-    #                     self.height_window += 10
-    #                 if j > 4 and j < 6:
-    #                     self.height_window += 35
-    #                 if j>=6 and j<11:
-    #                     self.height_window += 5
-    #
-    #
-    #                 row = j % 11
-    #                 self.columnsFrom[j].grid(row=row+5, column=col, padx=5)
-    #                 j+=1
-    #             combobox.configure(state='disabled')
-    #             root.geometry(str(self.width_window) + "x" + str(self.height_window))
-    #             combobox.update()
-    #
-    #     if len(self.indexColumnsTo) < self.num_of_col :
-    #         #self.columnsTo.clear()
-    #         j = 0
-    #         leng = len(self.columnsTo)
-    #         col = 3
-    #         while j < self.num_of_col:
-    #             if j % 11 == 0 and j != 0:
-    #                 col += 2
-    #             row = j % 11
-    #             if (j >= leng):
-    #                 self.columnsTo.append(ct.CTkComboBox(window, values=numbers, command=lambda event, l=j: self.valueChangedColumnTo(event, l), width=100))
-    #                 if j == len(self.indexColumnsTo):
-    #                     self.indexColumnsTo.append('A')
-    #                 self.columnsTo[j].set(str(j+1) +". To")
-    #             self.columnsTo[j].grid(row=row+5, column=col, padx=5)
-    #             j += 1
-    #         self.flag = True
-    #
-    #     else:
-    #         if self.flag:
-    #             for j in range(self.num_of_col):
-    #                 self.columnsTo[j].grid_remove()
-    #             self.flag = False
-    #         else:
-    #             j = 0
-    #             col = 3
-    #             for j in range(self.num_of_col):
-    #                 if j % 11 == 0 and j != 0:
-    #                     col += 2
-    #                 row = j % 11
-    #                 self.columnsTo[j].grid(row=row+5, column=col, padx=5)
-    #                 #self.columnsTo[j].set(self.indexColumnsTo[])
-    #             self.flag = True
-    #     print(self.indexColumnsFrom)
-    #     print(self.indexColumnsTo)
+    def valueChangedColumnFromA(self,event):
+        self.invoiceDataFrom=event
+        print(self.invoiceDataFrom)
+
+    def valueChangedColumnFromB(self, event):
+        self.invoiceDataFromB = event
+        print(self.invoiceDataFromB)
 
 
-    def valueChangedColumnFrom(self,event):
-        self.invoiceData=event
-        print(self.invoiceData)
-
-    def valueChangedColumnTo(self, event):
-        self.payedData=event
-        print(self.payedData)
+    def valueChangedColumnToA(self, event):
+        self.invoiceDataTo=event
+        print(self.invoiceDataTo)
 
     def sheetChangedOne(self, event):
         self.sheetFirst = event
