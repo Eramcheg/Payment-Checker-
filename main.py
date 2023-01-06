@@ -4,7 +4,7 @@ from tkinter import filedialog
 from copy import copy
 import customtkinter as ct
 import openpyxl
-
+from xls2xlsx import XLS2XLSX
 from PIL import JpegImagePlugin
 
 
@@ -1007,7 +1007,9 @@ class MainClass:
 
 
         if tempdir[-3:]=="xls":
-            print(tempdir)
+            x2x = XLS2XLSX(tempdir)
+            x2x.to_xlsx(tempdir+'x')
+            tempdir+='x'
 
         if len(tempdir) > 0:
             arr_of_sheets = (openpyxl.load_workbook(tempdir, read_only=True)).sheetnames
