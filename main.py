@@ -646,174 +646,109 @@ class MainClass:
                 row_number = i[KEY_A-1].row
                 if row_number >= start1 and row_number <= end1:
                     for j in fromSheet2.iter_rows():
-                        if j[KEY_B].value == id:
+                        KEY="".join(c for c in str(j[KEY_B].value) if c.isdecimal())
+                        if KEY == id:
                             if j[INVOICE_NUMBER_FROM_A].value !="None":
 
 
-                                sum = j[INVOICE_NUMBER_FROM_A].value
+                                paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
+                                requested_sum=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
 
+                                status_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+                                paid_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
+                                rest_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
 
-                                if float(sum) == float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value):
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1).value="PAID"
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = sum
+                                if requested_sum == paid_sum:
+                                    status_column.value = "PAID"
+                                    paid_column.value = paid_sum
+                                    self.Clients.append(Client(id))
+
+                                elif requested_sum > paid_sum != 0:
+                                    status_column.value = "PARTIALLY PAID"
+                                    paid_column.value = paid_sum
+                                    self.Clients.append(Client(id))
+
+                                elif paid_sum == 0:
+                                    status_column.value = "UNPAID"
+                                    paid_column.value = 0
                                     self.Clients.append(Client(id))
 
 
-                                elif float(sum) < float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value) and float(sum)!=0:
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1).value = "PARTIALLY PAID"
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = sum
-                                    self.Clients.append(Client(id))
-
-                                elif float(sum) == 0:
-                                    third_sheet.cell(row=row_number,
-                                                     column=INVOICE_NUMBER_TO_A + 1).value = "UNPAID"
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = 0
-                                    self.Clients.append(Client(id))
-
-
-                                elif float(sum) > float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value):
-                                    rest=float(sum)-float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
-                                    third_sheet.cell(row=row_number,
-                                                     column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A ).value = \
-                                        float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value = rest
+                                elif requested_sum < paid_sum:
+                                    rest = paid_sum - requested_sum
+                                    status_column.value = "PAID"
+                                    paid_column.value = requested_sum
+                                    rest_column.value = rest
                                     self.Clients.append(Client(id, rest))
 
                                 else:
-                                    third_sheet.cell(row=row_number,
-                                                     column=INVOICE_NUMBER_TO_A + 1).value = "NOT FOUND"
+                                    status_column.value = "NOT FOUND"
 
                             break
 
 
 
-
-
-
-
-                        # Alphabet in a code
-            for i in fromSheet1.iter_rows():
-                id = i[KEY_A].value[3:]
-                row_number = i[KEY_A - 1].row
-                if row_number >= start1 and row_number <= end1:
-
-                    for j in fromSheet2.iter_rows():
-                        if  str(j[KEY_B].value)!="None":
-                            if len(str(j[KEY_B].value)) != 7:
-                                if '/' not in str(j[KEY_B].value):
-                                    Key= "".join(c for c in str(j[KEY_B].value)  if  c.isdecimal())
-                                    if Key==id:
-
-                                        if j[INVOICE_NUMBER_FROM_A].value != "None":
-
-                                                        sum = j[INVOICE_NUMBER_FROM_A].value
-
-                                                        if float(sum) == float(third_sheet.cell(row=row_number,
-                                                                                                column=INVOICE_NUMBER_FROM_B).value):
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
-                                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = sum
-                                                            self.Clients.append(Client(id))
-
-
-                                                        elif float(sum) < float(third_sheet.cell(row=row_number,
-                                                                                                 column=INVOICE_NUMBER_FROM_B).value) and float(
-                                                                sum) != 0:
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PARTIALLY PAID"
-                                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = sum
-                                                            self.Clients.append(Client(id))
-
-                                                        elif float(sum) == 0:
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "UNPAID"
-                                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = 0
-                                                            self.Clients.append(Client(id))
-
-
-                                                        elif float(sum) > float(third_sheet.cell(row=row_number,
-                                                                                                 column=INVOICE_NUMBER_FROM_B).value):
-                                                            rest = float(sum) - float(third_sheet.cell(row=row_number,
-                                                                                                       column=INVOICE_NUMBER_FROM_B).value)
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
-                                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value = \
-                                                                float(third_sheet.cell(row=row_number,
-                                                                                       column=INVOICE_NUMBER_FROM_B).value)
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 2).value = rest
-                                                            self.Clients.append(Client(id, rest))
-
-
-
-                                        break
-
-
-
             payments=dict()
             WithSlashes = []
+
             for j in fromSheet2.iter_rows():
                             if len(str(j[KEY_B].value)) > 7 and len(str(j[KEY_B].value)) < 12:
                                 if '/' in str(j[KEY_B].value):
                                    WithSlashes.append(j)
+
             # Numbers of payment
             for i in fromSheet1.iter_rows():
+                id = i[KEY_A].value[3:]
 
-                            id = i[KEY_A].value[3:]
+                row_number = i[KEY_A - 1].row
 
-                            row_number = i[KEY_A - 1].row
+                if row_number >= start1 and row_number <= end1:
 
-                            if row_number >= start1 and row_number <= end1:
+                    for j in WithSlashes:
+                        Key = (str(j[KEY_B].value).split('/'))[0]
+                        if Key == id:
+                            if str(j[INVOICE_NUMBER_FROM_A].value) != "None":
 
-                                for j in WithSlashes:
-                                                Key = (str(j[KEY_B].value).split('/'))[0]
-                                                if Key == id:
-                                                    if str(j[INVOICE_NUMBER_FROM_A].value) != "None":
-                                                        if Key not in payments.keys():
-                                                            payments[Key] = 0
-                                                        sum = j[INVOICE_NUMBER_FROM_A].value
-                                                        payments[Key] += sum
-                                                        if float(sum) == float(third_sheet.cell(row=row_number,
-                                                                                                column=INVOICE_NUMBER_FROM_B).value):
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A).value = payments[Key]
-                                                            self.Clients.append(Client(id))
+                                    if Key not in payments.keys():
+                                        payments[Key] = 0
+                                    paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
+                                    requested_sum = float(
+                                        third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+
+                                    status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+                                    paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                                    rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
 
 
-                                                        elif float(sum) < float(third_sheet.cell(row=row_number,
-                                                                                                 column=INVOICE_NUMBER_FROM_B).value) and float(
-                                                            sum) != 0:
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PARTIALLY PAID"
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A).value = \
-                                                            payments[Key]
-                                                            self.Clients.append(Client(id))
+                                    payments[Key] += paid_sum
 
-                                                        elif float(sum) == 0:
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "UNPAID"
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A).value = 0
-                                                            self.Clients.append(Client(id))
+                                    if requested_sum == paid_sum:
+                                        status_column.value = "PAID"
+                                        paid_column.value = payments[Key]
+                                        self.Clients.append(Client(id))
 
 
-                                                        elif float(sum) > float(third_sheet.cell(row=row_number,
-                                                                                                 column=INVOICE_NUMBER_FROM_B).value):
-                                                            rest = float(payments[Key]) - float(third_sheet.cell(row=row_number,
-                                                                                                       column=INVOICE_NUMBER_FROM_B).value)
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 1).value = "PAID"
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A).value = \
-                                                                float(third_sheet.cell(row=row_number,
-                                                                                       column=INVOICE_NUMBER_FROM_B).value)
-                                                            third_sheet.cell(row=row_number,
-                                                                             column=INVOICE_NUMBER_TO_A + 2).value = rest
-                                                            self.Clients.append(Client(id, rest))
+
+                                    elif requested_sum > paid_sum != 0:
+                                        status_column.value = "PARTIALLY PAID"
+                                        paid_column.value = payments[Key]
+                                        self.Clients.append(Client(id))
+
+
+                                    elif paid_sum == 0:
+                                        status_column.value = "UNPAID"
+                                        paid_column.value = 0
+                                        self.Clients.append(Client(id))
+
+
+                                    elif requested_sum < paid_sum:
+
+                                        rest = float(payments[Key]) - requested_sum
+                                        status_column.value = "PAID"
+                                        paid_column.value = requested_sum
+                                        rest_column.value = rest
+                                        self.Clients.append(Client(id, rest))
+
             #End of the cycle
 
 
