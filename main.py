@@ -6,7 +6,7 @@ import customtkinter as ct
 import openpyxl
 from xls2xlsx import XLS2XLSX
 from PIL import JpegImagePlugin
-
+from openpyxl.styles import Color, PatternFill, Font, Border
 
 ct.set_appearance_mode('dark')
 ct.set_default_color_theme("dark-blue")
@@ -658,7 +658,17 @@ class MainClass:
                 #copying all styles, images, texts from tableA to tableC
                 self.copy_sheet(fromSheet1, third_sheet)
 
+                greenFill = PatternFill(start_color='0000FF00',
+                                        end_color='0000FF00',
+                                        fill_type='solid')
+                redFill = PatternFill(start_color='FFFF0000',
+                                      end_color='FFFF0000',
+                                      fill_type='solid')
+                orangeFill= PatternFill(start_color='00D9B900', end_color='00D9B900', fill_type='solid')
 
+                yellowFill=PatternFill(start_color='00FFF300', end_color='00FFF300', fill_type='solid')
+
+                darkgreenFill=PatternFill(start_color='00007E00', end_color='00007E00', fill_type='solid')
 
 
                 #this cycle select the start and end row based on user choice or without it
@@ -676,7 +686,9 @@ class MainClass:
                 third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).value = "Payment status"
                 third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).value = "Paid amount"
 
-
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A-1]].width=18
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A]].width = 18
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A +1]].width = 18
 
 
                 # updating a progress scale
@@ -709,27 +721,54 @@ class MainClass:
                                     paid_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
                                     rest_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
 
+
+
                                     if requested_sum == paid_sum:
+                                        rest=0
+                                        rest_column.value = rest
+                                        rest_column.fill=darkgreenFill
+
                                         status_column.value = "PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
                                         paid_column.value = paid_sum
-                                        self.Clients.append(Client(id))
+
+                                        self.Clients.append(Client(id,rest))
 
                                     elif requested_sum > paid_sum != 0:
+
+                                        rest = paid_sum - requested_sum
+                                        rest_column.value = rest
+                                        rest_column.fill= yellowFill
+
                                         status_column.value = "PARTIALLY PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = orangeFill
                                         paid_column.value = paid_sum
                                         self.Clients.append(Client(id))
 
                                     elif paid_sum == 0:
+
+                                        rest=paid_sum-requested_sum
+                                        rest_column.value = rest
+                                        rest_column.fill = redFill
+
                                         status_column.value = "UNPAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = redFill
                                         paid_column.value = 0
-                                        self.Clients.append(Client(id))
+
+                                        self.Clients.append(Client(id, rest))
 
 
                                     elif requested_sum < paid_sum:
                                         rest = paid_sum - requested_sum
                                         status_column.value = "PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
                                         paid_column.value = requested_sum
                                         rest_column.value = rest
+                                        rest_column.fill=darkgreenFill
                                         self.Clients.append(Client(id, rest))
 
                                     else:
@@ -785,20 +824,41 @@ class MainClass:
                                         payments[Key] += paid_sum
 
                                         if requested_sum == paid_sum:
+                                            rest = 0
+                                            rest_column.value = rest
+                                            rest_column.fill = darkgreenFill
+
+
                                             status_column.value = "PAID"
+                                            for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
                                             paid_column.value = payments[Key]
                                             self.Clients.append(Client(id))
 
 
 
                                         elif requested_sum > paid_sum != 0:
+                                            rest = float(payments[Key]) - requested_sum
+                                            rest_column.value = rest
+                                            rest_column.fill = yellowFill
+
+
                                             status_column.value = "PARTIALLY PAID"
+                                            for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                                third_sheet.cell(row=row_number, column=column).fill = orangeFill
                                             paid_column.value = payments[Key]
                                             self.Clients.append(Client(id))
 
 
                                         elif paid_sum == 0:
+                                            rest = float(payments[Key]) - requested_sum
+                                            rest_column.value = rest
+                                            rest_column.fill = redFill
+
+
                                             status_column.value = "UNPAID"
+                                            for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                                third_sheet.cell(row=row_number, column=column).fill = redFill
                                             paid_column.value = 0
                                             self.Clients.append(Client(id))
 
@@ -807,6 +867,8 @@ class MainClass:
 
                                             rest = float(payments[Key]) - requested_sum
                                             status_column.value = "PAID"
+                                            for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
                                             paid_column.value = requested_sum
                                             rest_column.value = rest
                                             self.Clients.append(Client(id, rest))
@@ -879,19 +941,39 @@ class MainClass:
                                 all_sum+=payments[Key]
                                 if str(paid_column.value)!="Paid":
                                     if requested_sum == all_sum:
+                                        rest = 0
+                                        rest_column.value = rest
+                                        rest_column.fill = darkgreenFill
+
+
                                         status_column.value = "PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
                                         paid_column.value = all_sum
                                         all_sum=0
                                         self.Clients.append(Client(id))
 
                                     elif requested_sum > all_sum != 0:
+                                        rest = all_sum - requested_sum
+                                        rest_column.value = rest
+                                        rest_column.fill = yellowFill
+
+
                                         status_column.value = "PARTIALLY PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = orangeFill
                                         paid_column.value = all_sum
                                         all_sum=0
                                         self.Clients.append(Client(id))
 
                                     elif all_sum == 0:
+                                        rest = all_sum - requested_sum
+                                        rest_column.value = rest
+                                        rest_column.fill = redFill
+
                                         status_column.value = "UNPAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 2):
+                                            third_sheet.cell(row=row_number, column=column).fill = redFill
                                         paid_column.value = 0
                                         self.Clients.append(Client(id))
 
@@ -900,11 +982,20 @@ class MainClass:
                                         if NUMBER_OF_CHECK!=len(keys):
                                             all_sum-=requested_sum
                                             self.Clients.append(Client(id))
-                                        else:
-                                            rest = all_sum - requested_sum
+                                            rest=0
                                             rest_column.value = rest
+                                            rest_column.fill = darkgreenFill
+
+                                        else:
+                                            rest = (all_sum - requested_sum)
+                                            rest_column.value = rest
+                                            rest_column.fill = darkgreenFill
+
                                             self.Clients.append(Client(id, rest))
                                         status_column.value = "PAID"
+                                        for column in range(1, INVOICE_NUMBER_TO_A+2):
+                                            third_sheet.cell(row=row_number,column=column).fill=greenFill
+                                        #status_column.fill = greenFill
                                         paid_column.value = requested_sum
 
 
