@@ -422,13 +422,6 @@ class MainClass:
         combobox_Number_Columns=ct.CTkComboBox(mainFrame, values=rows, command=self.valueChangedNumOfCol)
         combobox_Number_Columns.grid( row=10, column=0, padx=20, pady=5)
 
-        # buttonSelectColumns = ct.CTkButton(mainFrame, text="Select Columns",
-        #                                   command=lambda: self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns, labelSelectedColumns))
-        # buttonSelectColumns.grid(row=10, column=1, padx=20, pady=5)
-
-        # self.selectColumns(mainFrame, alphabet, buttonSelectColumns, root, combobox_Number_Columns,
-        #                    labelSelectedColumns)
-
 
 
 
@@ -755,9 +748,67 @@ class MainClass:
             #A lot of pay numbers
             A_Lot_Of_Numbers=[]
             for j in fromSheet2.iter_rows():
-                            if len(str(j[KEY_B].value)) > 14:
-                                if '/' in str(j[KEY_B].value):
-                                   A_Lot_Of_Numbers.append(j)
+                if len(str(j[KEY_B].value)) > 14:
+                    if '/' in str(j[KEY_B].value):
+                        A_Lot_Of_Numbers.append(j)
+
+            for j in A_Lot_Of_Numbers:
+                keys = str(j[KEY_B].value).split('/')
+                if str(j[INVOICE_NUMBER_FROM_A].value) == "None":
+                    continue
+                else:
+                    all_sum = float(j[INVOICE_NUMBER_FROM_A].value)
+                NUMBER_OF_CHECK = 0
+                for Key in keys:
+
+
+                    for i in fromSheet1.iter_rows():
+                        id = i[KEY_A].value[3:]
+                        row_number = i[KEY_A - 1].row
+                        if Key == id:
+                            NUMBER_OF_CHECK+=1
+                            requested_sum = float(
+                                third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+                            if Key not in payments.keys():
+                                payments[Key] = 0
+                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value=''
+                            status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+                            paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                            rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
+
+                            all_sum+=payments[Key]
+                            if str(paid_column.value)!="Paid":
+                                if requested_sum == all_sum:
+                                    status_column.value = "PAID"
+                                    paid_column.value = all_sum
+                                    all_sum=0
+                                    self.Clients.append(Client(id))
+
+                                elif requested_sum > all_sum != 0:
+                                    status_column.value = "PARTIALLY PAID"
+                                    paid_column.value = all_sum
+                                    all_sum=0
+                                    self.Clients.append(Client(id))
+
+                                elif all_sum == 0:
+                                    status_column.value = "UNPAID"
+                                    paid_column.value = 0
+                                    self.Clients.append(Client(id))
+
+
+                                elif requested_sum < all_sum:
+                                    if NUMBER_OF_CHECK!=len(keys):
+                                        all_sum-=requested_sum
+                                        self.Clients.append(Client(id))
+                                    else:
+                                        rest = all_sum - requested_sum
+                                        rest_column.value = rest
+                                        self.Clients.append(Client(id, rest))
+                                    status_column.value = "PAID"
+                                    paid_column.value = requested_sum
+
+
+
 
 
             # for i in fromSheet1.iter_rows():
@@ -765,12 +816,18 @@ class MainClass:
             #     row_number = i[KEY_A - 1].row
             #     if row_number >= start1 and row_number <= end1:
             #         for j in A_Lot_Of_Numbers:
-            #             Numbers = str(j).split('/')
+            #             keys = str(j[KEY_B].value).split('/')
             #
-            #             for k in Numbers:
-            #                 Key = k
+            #             for Key in keys:
             #                 if Key == id:
-            #                     temporary_sum = 0
+            #                     all_sum = float(j[INVOICE_NUMBER_FROM_A].value)
+            #                     requested_sum = float(
+            #                         third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+            #
+            #                     status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+            #                     paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+            #                     rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
+
 
 
 
@@ -898,6 +955,6 @@ class MainClass:
 
 
 
-#
+
 m = MainClass()
 m.startApp()
