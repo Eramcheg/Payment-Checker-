@@ -4,11 +4,9 @@ from tkinter import filedialog
 from copy import copy
 import customtkinter as ct
 import openpyxl
-import pyexcel
-from PIL import JpegImagePlugin
-import pyexcel_io
 
-from Client import Client
+from PIL import JpegImagePlugin
+
 
 ct.set_appearance_mode('dark')
 ct.set_default_color_theme("dark-blue")
@@ -1031,7 +1029,11 @@ class MainClass:
 
 
 
-
+class Client:
+    def __init__(self, Account_Number,rest=0, Accountant_Account_Number=None):
+        self.rest=rest
+        self.Account_Number = Account_Number
+        self.Accountant_Account_Number = Accountant_Account_Number
 
 
 
