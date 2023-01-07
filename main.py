@@ -17,7 +17,7 @@ class MainClass:
 
         self.Clients=[]
 
-
+        self.errors = []
 
 
         # function 2
@@ -44,12 +44,6 @@ class MainClass:
         #self.indexColumnsTo=['C','D','E','F']
         self.indexColumnsFrom=[]
         self.indexColumnsTo=[]
-
-        self.num_of_col=1
-        self.flag=True
-
-        self.width_window=672
-        self.height_window=425
 
         self.invoiceDataFrom="A"
         self.invoiceDataTo='A'
@@ -406,7 +400,7 @@ class MainClass:
 
         switchROWS = ct.CTkSwitch(master=mainFrame, text="Show edition", onvalue="on", offvalue="off",
                                 command=lambda: self.hideROWS(switchROWS,Combobox_Row_Start_Key_B, Entry_Row_End_Key_B, ConfirmB))
-        switchROWS.grid(row=8, column=0, columnspan=2, padx=20, pady=(5,0))
+        switchROWS.grid(row=11, column=0, columnspan=2, padx=20, pady=(5,0))
 
 
 
@@ -438,19 +432,22 @@ class MainClass:
 
 
 
-
-
-
+        confirmButtonPercent=ct.CTkButton(mainFrame, text="Confirm")
+        entryPercent= ct.CTkEntry(mainFrame, placeholder_text="Enter end B row")
+        lablePercent=ct.CTkLabel(mainFrame, text="Enter the percentage that\ncompany receives from each payment")
+        entryPercent.grid(row=9, column=0, )
+        lablePercent.grid(row=8, column=0, columnspan=2)
+        confirmButtonPercent.grid(row=9, column=1)
 
 
 
 
 
         labelProgressBar=ct.CTkLabel(mainFrame, text="Click Synchronize to start synchronization", font=('Arial', 17))
-        labelProgressBar.grid(row=13, column=0, columnspan=2, padx=20, pady=(5, 0))
+        labelProgressBar.grid(row=15, column=0, columnspan=2, padx=20, pady=(5, 0))
 
         progressFn2=ct.CTkProgressBar(mainFrame)
-        progressFn2.grid(row=14, column=0, columnspan=2, padx=20, pady=(0, 10))
+        progressFn2.grid(row=16, column=0, columnspan=2, padx=20, pady=(0, 10))
         progressFn2.set(0)
 
 
@@ -458,7 +455,7 @@ class MainClass:
         # BUTTON SYNCHRONIZE
 
         buttonSynchronize=ct.CTkButton(mainFrame, text="Synchronize", font=('Arial', 17),command = lambda:self.Synchronize(alphabet, labelProgressBar, progressFn2))
-        buttonSynchronize.grid(row=12, column=0, columnspan=2, padx=20, pady=0)
+        buttonSynchronize.grid(row=14, column=0, columnspan=2, padx=20, pady=0)
 
 
         #BUTTON RESTART
@@ -500,6 +497,10 @@ class MainClass:
         root.mainloop()
 
 
+
+
+
+
     def restart(self):
         os.execl(sys.executable, sys.executable, *sys.argv)
 
@@ -516,9 +517,9 @@ class MainClass:
     #this function hide and show edition
     def hideROWS(self,switch, combobox, entry, confirm):
         if switch.get() == 'on':
-            combobox.grid(row=9, column=0, padx=(20, 5), pady=(5, 0))
-            entry.grid(row=9, column=1, padx=(10, 5), pady=(5, 0))
-            confirm.grid(row=10, column=0, columnspan=2, padx=20, pady=5)
+            combobox.grid(row=12, column=0, padx=(20, 5), pady=(5, 0))
+            entry.grid(row=12, column=1, padx=(10, 5), pady=(5, 0))
+            confirm.grid(row=13, column=0, columnspan=2, padx=20, pady=(5,15))
         else:
             combobox.grid_remove()
             entry.grid_remove()
@@ -647,13 +648,15 @@ class MainClass:
                 self.updating_scale(label,progress,counter_of_actions,all_actions, "Copying table A")
 
                 thirdTable = openpyxl.Workbook()
-                #thirdTable.create_sheet("Result")
+                thirdTable.create_sheet("Errors")
+
                 path = self.export_folder + "OutputResult.xlsx"
                 thirdTable.save(path)
                 thirdTable.close()
 
                 thirdTable = openpyxl.load_workbook(path)
                 third_sheet = thirdTable['Sheet']
+                error_sheet = thirdTable['Errors']
 
                 #copying all styles, images, texts from tableA to tableC
                 self.copy_sheet(fromSheet1, third_sheet)
@@ -721,7 +724,7 @@ class MainClass:
 
 
                                     paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
-                                    requested_sum=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+                                    requested_sum = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
 
                                     status_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
                                     paid_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
@@ -1020,15 +1023,29 @@ class MainClass:
                 for i in fromSheet1.iter_rows():
                     row_number = i[KEY_A - 1].row
                     if row_number >= start1 and row_number <= end1 :
-                        if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value) != 'None':
-                            requested_sum = float(str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value))
-                            All_requested += requested_sum
+                        CELL_REQUESTED=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B)
+                        CELL_PAID=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                        #CELL_REST=
 
-                        if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value) != 'None':
-                            payed_sum = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A).value)
-                            All_payed += payed_sum
 
-                        if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value) !='None':
+
+                        if str(CELL_REQUESTED.value) != 'None':
+                            val = "".join( c for c in str(CELL_REQUESTED.value) if c.isdecimal() or c == '.')
+                            print(val)
+
+                            if val == str(CELL_REQUESTED.value):
+                                All_requested += float(val)
+                            else:
+                                self.errors.append([alphabet[INVOICE_NUMBER_FROM_B-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+
+                        if str(CELL_PAID.value) != 'None':
+                            payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
+                            if payed_sum == str(CELL_PAID.value):
+                                All_payed += float(payed_sum)
+                            else:
+                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+
+                        if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value) != 'None':
                             if float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value) < 0:
                                 left_sum_minus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
                                 Payments_left+=left_sum_minus
@@ -1053,6 +1070,34 @@ class MainClass:
                 SUMME_REST=third_sheet.cell(row=last_row+1, column=INVOICE_NUMBER_TO_A+2)
                 SUMME_REST.value=round(Payments_rest)
                 SUMME_REST.fill=darkgreenFill
+
+
+
+                ERROR_CELL=error_sheet.cell(row=2, column=3)
+                ROW_CELL=error_sheet.cell(row=2, column=2)
+                COLUMN_CELL=error_sheet.cell(row=2, column=1)
+                TEXT_CELL=error_sheet.cell(row=1, column=1)
+
+                TEXT_CELL.value = 'ERRORS WHILE PARSING NEXT CELLS'
+                TEXT_CELL.font = ('Calibri', 30)
+                TEXT_CELL.fill = orangeFill
+
+                COLUMN_CELL.value = 'Column'
+                COLUMN_CELL.font = ('Calibri', 25)
+                COLUMN_CELL.fill = yellowFill
+                ROW_CELL.value = 'Row'
+                ROW_CELL.font=('Calibri', 25)
+                ROW_CELL.fill= yellowFill
+                ERROR_CELL.value = 'Error'
+                ERROR_CELL.font=('Calibri', 25)
+                ERROR_CELL.fill = yellowFill
+
+                error_sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=3)
+                error_sheet.column_dimensions[alphabet[2]].width=72
+                for ERRORS in range(len(self.errors)):
+                    for values in range(len(self.errors[ERRORS])):
+                        error_sheet.cell(row=ERRORS+3, column=values+1).value=self.errors[ERRORS][values]
+
 
 
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_FROM_B-1]].width=7
