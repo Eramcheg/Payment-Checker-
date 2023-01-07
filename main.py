@@ -1048,14 +1048,6 @@ class MainClass:
 
 
 
-                        if str(CELL_PAID.value) != 'None':
-                            payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
-                            if payed_sum == str(CELL_PAID.value):
-                                All_payed += float(payed_sum)
-                                Receiver_percentage += float(payed_sum)*self.percent*0.01
-                            else:
-                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
-
 
 
                         if str(CELL_REST.value) != 'None':
@@ -1070,18 +1062,27 @@ class MainClass:
                             else:
                                 self.errors.append([alphabet[INVOICE_NUMBER_TO_A+1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
+                        if str(CELL_PAID.value) != 'None':
+                            payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
+                            if payed_sum == str(CELL_PAID.value):
+                                All_payed += float(payed_sum)
+
+                            else:
+                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+
+
                     last_row=row_number
 
 
 
 
-
+                last_row+=1
                 SUMME_CELL=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_FROM_B)
                 SUMME_CELL.value = str(round(All_requested))
                 SUMME_CELL.fill = yellowFill
 
                 SUMME_CELL_PAID=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A)
-                SUMME_CELL_PAID.value=str(round(All_payed))
+                SUMME_CELL_PAID.value=str(round(All_payed + Payments_rest))
                 SUMME_CELL_PAID.fill=darkgreenFill
 
                 SUMME_LEFT=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A+2)
@@ -1097,7 +1098,7 @@ class MainClass:
                 TEXT_PERCENTAGE.fill=darkgreenFill
 
                 SUMME_PERCENTAGE = third_sheet.cell(row=last_row+2, column=INVOICE_NUMBER_TO_A)
-                SUMME_PERCENTAGE.value = Receiver_percentage
+                SUMME_PERCENTAGE.value = float(SUMME_CELL_PAID.value) * 0.01 * self.percent
                 SUMME_PERCENTAGE.fill = greenFill
 
                 ERROR_CELL=error_sheet.cell(row=2, column=3)
