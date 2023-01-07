@@ -20,6 +20,8 @@ class MainClass:
         self.errors = []
 
 
+        self.percent=0
+
         # function 2
         self.sheetFirst=None
         self.sheetSecond=None
@@ -432,9 +434,10 @@ class MainClass:
 
 
 
-        confirmButtonPercent=ct.CTkButton(mainFrame, text="Confirm")
-        entryPercent= ct.CTkEntry(mainFrame, placeholder_text="Enter end B row")
-        lablePercent=ct.CTkLabel(mainFrame, text="Enter the percentage that\ncompany receives from each payment")
+
+        entryPercent= ct.CTkEntry(mainFrame, placeholder_text="Enter value without %")
+        confirmButtonPercent = ct.CTkButton(mainFrame, text="Confirm", command=lambda: self.confirmEntryPercent(entryPercent))
+        lablePercent=ct.CTkLabel(mainFrame, text="Enter the percentage that\ncompany receives from each payment\n")
         entryPercent.grid(row=9, column=0, )
         lablePercent.grid(row=8, column=0, columnspan=2)
         confirmButtonPercent.grid(row=9, column=1)
@@ -608,7 +611,7 @@ class MainClass:
     def Synchronize(self, alphabet, label, progress):
         if self.sheetFirst != None and self.sheetSecond != None and self.export_folder != None :
 
-
+            self.errors=[]
 
             counter_of_actions=0
             all_actions=5
@@ -1020,12 +1023,17 @@ class MainClass:
                 Payments_left=0
                 Payments_rest=0
                 last_row=0
+
+
+                Receiver_percentage=0
+
+
                 for i in fromSheet1.iter_rows():
                     row_number = i[KEY_A - 1].row
                     if row_number >= start1 and row_number <= end1 :
-                        CELL_REQUESTED=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B)
-                        CELL_PAID=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
-                        #CELL_REST=
+                        CELL_REQUESTED = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B)
+                        CELL_PAID = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                        CELL_REST = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2)
 
 
 
@@ -1038,21 +1046,34 @@ class MainClass:
                             else:
                                 self.errors.append([alphabet[INVOICE_NUMBER_FROM_B-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
+
+
                         if str(CELL_PAID.value) != 'None':
                             payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
                             if payed_sum == str(CELL_PAID.value):
                                 All_payed += float(payed_sum)
+                                Receiver_percentage += float(payed_sum)*self.percent*0.01
                             else:
                                 self.errors.append([alphabet[INVOICE_NUMBER_TO_A-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
-                        if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value) != 'None':
-                            if float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value) < 0:
-                                left_sum_minus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                                Payments_left+=left_sum_minus
+
+
+                        if str(CELL_REST.value) != 'None':
+                            rest_sum="".join(c for c in str(CELL_REST.value) if c.isdecimal() or c=='.' or c=='-')
+                            if rest_sum == str(CELL_REST.value):
+                                if float(rest_sum) < 0:
+                                    left_sum_minus = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
+                                    Payments_left += left_sum_minus
+                                else:
+                                    left_sum_plus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
+                                    Payments_rest+=left_sum_plus
                             else:
-                                left_sum_plus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                                Payments_rest+=left_sum_plus
+                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A+1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+
                     last_row=row_number
+
+
+
 
 
                 SUMME_CELL=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_FROM_B)
@@ -1071,7 +1092,13 @@ class MainClass:
                 SUMME_REST.value=round(Payments_rest)
                 SUMME_REST.fill=darkgreenFill
 
+                TEXT_PERCENTAGE = third_sheet.cell(row=last_row + 2, column=INVOICE_NUMBER_TO_A-1)
+                TEXT_PERCENTAGE.value='Percentage of payments receiver'
+                TEXT_PERCENTAGE.fill=darkgreenFill
 
+                SUMME_PERCENTAGE = third_sheet.cell(row=last_row+2, column=INVOICE_NUMBER_TO_A)
+                SUMME_PERCENTAGE.value = Receiver_percentage
+                SUMME_PERCENTAGE.fill = greenFill
 
                 ERROR_CELL=error_sheet.cell(row=2, column=3)
                 ROW_CELL=error_sheet.cell(row=2, column=2)
@@ -1146,6 +1173,17 @@ class MainClass:
     def sheetChangedTwo(self, event):
         self.sheetSecond = event
 
+
+    def confirmEntryPercent(self, UserPercent):
+        try:
+            self.percent = float(UserPercent.get())
+            print(self.percent)
+            UserPercent.configure(text_color="green")
+            UserPercent.configure(placeholder_text="Input percent value")
+
+        except:
+            UserPercent.configure(text_color="red")
+            UserPercent.configure(placeholder_text="Value must be a num!")
 
 
     def valueChangedRowF2(self, event, isKey, table):
