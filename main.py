@@ -617,13 +617,24 @@ class MainClass:
 
         self.Clients.append(Client(id, rest))
 
-    def PARTICALLY_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column ):
+    def PARTICALLY_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, id ):
         rest = paid_sum - requested_sum
 
         status_column.value = "PARTIALLY PAID"
         for column in range(1, INVOICE_NUMBER_TO_A + 3):
             third_sheet.cell(row=row_number, column=column).fill = greenFill
         paid_column.value = paid_sum
+        self.Clients.append(Client(id, rest))
+
+
+    def NULL_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, redFill, paid_column, id):
+        rest = paid_sum - requested_sum
+
+        status_column.value = "UNPAID"
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = redFill
+        paid_column.value = 0
+
         self.Clients.append(Client(id, rest))
 
 
@@ -757,42 +768,28 @@ class MainClass:
                                     paid_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
                                     #rest_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
 
+                                    if str(status_column.value) != "PAID":
+                                        if requested_sum == paid_sum:
+                                            self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum, id)
+
+                                        elif requested_sum > paid_sum != 0:
+                                            self.PARTICALLY_SUM(paid_sum,requested_sum,status_column,INVOICE_NUMBER_TO_A, third_sheet,row_number,greenFill,
+                                                                paid_column, id)
+
+                                        elif paid_sum == 0:
+                                            self.NULL_SUM(paid_sum,requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, redFill
+                                                          , paid_column, id)
 
 
-                                    if requested_sum == paid_sum:
-                                        self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum, id)
-
-                                    elif requested_sum > paid_sum != 0:
-                                        self.PARTICALLY_SUM(paid_sum,requested_sum,status_column,INVOICE_NUMBER_TO_A, third_sheet,row_number,greenFill,
-                                                            paid_column)
-
-
-                                    elif paid_sum == 0:
-
-                                        rest = paid_sum-requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
-                                        status_column.value = "UNPAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = redFill
-                                        paid_column.value = 0
-
-                                        self.Clients.append(Client(id, rest))
-
-
-                                    elif requested_sum < paid_sum:
-                                        rest = paid_sum - requested_sum
-                                        status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = darkgreenFill
-                                        self.Clients.append(Client(id, rest))
-
-                                    else:
-                                        status_column.value = "NOT FOUND"
+                                        elif requested_sum < paid_sum:
+                                            rest = paid_sum - requested_sum
+                                            status_column.value = "PAID"
+                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
+                                            paid_column.value = requested_sum
+                                            #rest_column.value = rest
+                                            #rest_column.fill = darkgreenFill
+                                            self.Clients.append(Client(id, rest))
 
                                 break
 
@@ -842,37 +839,35 @@ class MainClass:
 
 
                                         payments[Key] += paid_sum
-
-                                        if requested_sum == paid_sum:
-                                            self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
-                                                          greenFill, paid_column, payments[Key], id)
-
-
-                                        elif requested_sum > paid_sum != 0:
-                                            self.PARTICALLY_SUM(float(payments[Key]), requested_sum, status_column,
-                                                                INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
-                                                                paid_column)
+                                        if str(status_column.value) != "PAID":
+                                            if requested_sum == paid_sum:
+                                                self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                              greenFill, paid_column, payments[Key], id)
 
 
-
-                                        elif paid_sum == 0:
-                                            status_column.value = "UNPAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = redFill
-                                            paid_column.value = 0
-                                            self.Clients.append(Client(id))
+                                            elif requested_sum > paid_sum != 0:
+                                                self.PARTICALLY_SUM(float(payments[Key]), requested_sum, status_column,
+                                                                    INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
+                                                                    paid_column,id)
 
 
-                                        elif requested_sum < paid_sum:
 
-                                            rest = float(payments[Key]) - requested_sum
-                                            status_column.value = "PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill=darkgreenFill
-                                            self.Clients.append(Client(id, rest))
+                                            elif paid_sum == 0:
+                                                self.NULL_SUM(paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A,
+                                                              third_sheet, row_number, redFill
+                                                              , paid_column, id)
+
+
+                                            elif requested_sum < paid_sum:
+
+                                                rest = float(payments[Key]) - requested_sum
+                                                status_column.value = "PAID"
+                                                for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                                    third_sheet.cell(row=row_number, column=column).fill = greenFill
+                                                paid_column.value = requested_sum
+                                                #rest_column.value = rest
+                                                #rest_column.fill=darkgreenFill
+                                                self.Clients.append(Client(id, rest))
 
                 #End of the cycle
 
@@ -939,32 +934,23 @@ class MainClass:
 
 
                                 all_sum+=payments[Key]
-                                if str(status_column.value) != "Paid":
+                                if str(status_column.value) != "PAID":
                                     if requested_sum == all_sum:
                                         self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
                                                       greenFill, paid_column, all_sum, id)
                                         all_sum=0
 
                                     elif requested_sum > all_sum != 0:
-                                        rest = all_sum - requested_sum
+                                        self.PARTICALLY_SUM(all_sum, requested_sum, status_column,
+                                                            INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
+                                                            paid_column, id)
 
-                                        status_column.value = "PARTIALLY PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = all_sum
                                         all_sum=0
-                                        self.Clients.append(Client(id))
 
                                     elif all_sum == 0:
-                                        rest = all_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
-                                        status_column.value = "UNPAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = redFill
-                                        paid_column.value = 0
-                                        self.Clients.append(Client(id))
+                                        self.NULL_SUM(all_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A,
+                                                      third_sheet, row_number, redFill
+                                                      , paid_column, id)
 
 
                                     elif requested_sum < all_sum:
@@ -972,19 +958,16 @@ class MainClass:
                                             all_sum-=requested_sum
                                             self.Clients.append(Client(id))
                                             rest=0
-                                            #rest_column.value = rest
-                                            #rest_column.fill = yellowFill
+
 
                                         else:
                                             rest = (all_sum - requested_sum)
-                                            #rest_column.value = rest
-                                            #rest_column.fill = darkgreenFill
 
-                                            self.Clients.append(Client(id, rest))
+
+                                        self.Clients.append(Client(id, rest))
                                         status_column.value = "PAID"
                                         for column in range(1, INVOICE_NUMBER_TO_A+3):
                                             third_sheet.cell(row=row_number,column=column).fill=greenFill
-                                        #status_column.fill = greenFill
                                         paid_column.value = requested_sum
 
 
@@ -994,13 +977,15 @@ class MainClass:
                 self.updating_scale(label, progress, counter_of_actions, all_actions, "Please wait, changes are being applied to the file")
 
 
+
+
+
+
                 All_requested=0
                 All_payed=0
                 Payments_rest=0
                 last_row=0
                 All_comission=0
-
-
 
 
                 for i in fromSheet1.iter_rows():
@@ -1022,21 +1007,6 @@ class MainClass:
                                 self.errors.append([alphabet[INVOICE_NUMBER_FROM_B-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
 
-
-
-
-
-                        #if str(CELL_REST.value) != 'None':
-                        #    rest_sum="".join(c for c in str(CELL_REST.value) if c.isdecimal() or c=='.' or c=='-')
-                        #    if rest_sum == str(CELL_REST.value):
-                        #        if float(rest_sum) < 0:
-                        #            left_sum_minus = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                        #            Payments_left += left_sum_minus
-                        #        else:
-                       #             left_sum_plus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                        #            Payments_rest+=left_sum_plus
-                       #     else:
-                       #         self.errors.append([alphabet[INVOICE_NUMBER_TO_A+1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
                         if str(CELL_PAID.value) != 'None':
                             payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
@@ -1074,22 +1044,6 @@ class MainClass:
                 SUMME_CELL_COMISSION.value=round(All_comission,1)
                 SUMME_CELL_COMISSION.fill=darkgreenFill
 
-
-                #SUMME_LEFT=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A+2)
-                #SUMME_LEFT.value=round(Payments_left)
-                #SUMME_LEFT.fill=redFill
-
-                #SUMME_REST=third_sheet.cell(row=last_row+1, column=INVOICE_NUMBER_TO_A+2)
-                #SUMME_REST.value=round(Payments_rest)
-                #SUMME_REST.fill=darkgreenFill
-
-                #TEXT_PERCENTAGE = third_sheet.cell(row=last_row + 2, column=INVOICE_NUMBER_TO_A-1)
-                #TEXT_PERCENTAGE.value='Percentage of payments receiver'
-                #TEXT_PERCENTAGE.fill=darkgreenFill
-
-                #SUMME_PERCENTAGE = third_sheet.cell(row=last_row+2, column=INVOICE_NUMBER_TO_A)
-                #SUMME_PERCENTAGE.value = float(SUMME_CELL_PAID.value) * 0.01 * self.percent
-                #SUMME_PERCENTAGE.fill = greenFill
 
                 ERROR_CELL=error_sheet.cell(row=2, column=3)
                 ROW_CELL=error_sheet.cell(row=2, column=2)
