@@ -20,14 +20,13 @@ class MainClass:
         self.errors = []
 
 
-        self.percent=0
+
 
         # function 2
         self.sheetFirst=None
         self.sheetSecond=None
         self.firstfileF2=''
         self.secondfileF2=''
-        self.onefileF2=''
 
         self.colKeyA = 'A'
         self.colKeyB = 'A'
@@ -38,14 +37,7 @@ class MainClass:
         self.startB = '2'
         self.endB = '1'
 
-        self.TwoOrOne = None
 
-        self.columnsFrom=[]
-        self.columnsTo=[]
-        #self.indexColumnsFrom=['B','B','B','B']
-        #self.indexColumnsTo=['C','D','E','F']
-        self.indexColumnsFrom=[]
-        self.indexColumnsTo=[]
 
         self.invoiceDataFrom="A"
         self.invoiceDataTo='A'
@@ -353,18 +345,12 @@ class MainClass:
 
 
 
-        labelFile1 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
-        labelFile1.grid(row=1, column=0, columnspan=2, padx=(20,10), pady=0)
-
-        labelFile2 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
-        labelFile2.grid(row=3, column=0, columnspan=2, padx=(20,10), pady=0)
-
-        labelFolder = ct.CTkLabel(mainFrame, text="Folder for export: folder is not selected")
-        labelFolder.grid(row=2, column=2, rowspan=2, padx=(20,10), pady=(0, 5))
 
 
 
-        # SHEETS
+
+        # SHEETS OF UPLOADED FILES
+
         labelSheet1=ct.CTkLabel(mainFrame, text="Sheet from table A")
         labelSheet1.grid(row=4, column=0, padx=(20,5),pady=(5,0))
         sheets1 = ct.CTkComboBox(mainFrame, values=[], command=self.sheetChangedOne)
@@ -378,7 +364,36 @@ class MainClass:
         sheets2.set("Sheet 2 (to) ")
 
 
+        # LABELS FOR UPLOADING FILES
 
+        labelFile1 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
+        labelFile1.grid(row=1, column=0, columnspan=2, padx=(20, 10), pady=0)
+
+        labelFile2 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
+        labelFile2.grid(row=3, column=0, columnspan=2, padx=(20, 10), pady=0)
+
+        labelFolder = ct.CTkLabel(mainFrame, text="Folder for export: folder is not selected")
+        labelFolder.grid(row=2, column=2, rowspan=2, padx=(20, 10), pady=(0, 5))
+
+
+
+        # BUTTONS, OPEN THE EXCEL FILES
+
+        buttonOpenExcel1 = ct.CTkButton(mainFrame, text="Load main excel file", font=('Arial', 17),
+                                        command=lambda: self.openFileFun2(sheets1, labelFile1, 1))
+        buttonOpenExcel1.grid(row=0, column=0, columnspan=2, padx=(20, 10), pady=(20, 0))
+
+        buttonOpenExcel2 = ct.CTkButton(mainFrame, text="Load second excel file", font=('Arial', 17),
+                                        command=lambda: self.openFileFun2(sheets2, labelFile2, 2))
+        buttonOpenExcel2.grid(row=2, column=0, columnspan=2, padx=(20, 10), pady=(7, 0))
+
+        buttonOpenFolder = ct.CTkButton(mainFrame, text="Load folder for export", font=('Arial', 17),
+                                        command=lambda: self.openFolder(labelFolder))
+        buttonOpenFolder.grid(row=1, column=2, rowspan=2, padx=(10, 0), pady=(7, 0))
+
+
+
+        # KEYS COMBOBOXES AND LABELS
 
         comboboxColumnKeyA = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "A"))
         comboboxColumnKeyB = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "B"))
@@ -386,11 +401,62 @@ class MainClass:
         comboboxColumnKeyA.grid(row=7, column=0, padx=(20,5), pady=(5, 0))
         comboboxColumnKeyB.grid(row=7, column=1, padx=(10,5), pady=(5, 0))
 
-
         labelKeyA=ct.CTkLabel(mainFrame, text="Key column A")
         labelKeyB=ct.CTkLabel(mainFrame, text="Key column B")
         labelKeyA.grid(row=6, column=0, padx=20, pady=(4, 0))
         labelKeyB.grid(row=6, column=1, padx=20, pady=(4, 0))
+
+
+
+
+
+        # COMBOBOXES WITH ACCOUNT COLUMNS
+
+        AccountNumberFromeTableA = ct.CTkComboBox(mainFrame, values=alphabet, command=self.valueChangedColumnFromA,
+                                                  width=175)
+        AccountNumberToTableA = ct.CTkComboBox(mainFrame, values=alphabet, command=self.valueChangedColumnToA,
+                                               width=175)
+        AccountNumberFromTableB = ct.CTkComboBox(mainFrame, values=alphabet, command=self.valueChangedColumnFromB,
+                                                 width=175)
+        AccountNumberFromeTableA.set("CurrentP from column ")
+        AccountNumberToTableA.set("RequiredP to column")
+        AccountNumberFromTableB.set("RequiredP from column")
+        AccountNumberFromeTableA.grid(row=5, column=2, padx=5)
+        AccountNumberToTableA.grid(row=7, column=2, padx=5)
+        AccountNumberFromTableB.grid(row=9, column=2, padx=5)
+
+
+
+        # LABLES WITH ACCOUNT COLUMNS DESCRIPTION
+        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
+                                                     text="Select column from second file \nwith the current payments")
+        LABLE_AccountNumberFromeTableA.grid(row=4, column=2, padx=5, pady=(10, 0))
+
+        LABLE_AccountNumberToTableA = ct.CTkLabel(mainFrame,
+                                                  text="Select column from main file \nfor loading the current payments")
+        LABLE_AccountNumberToTableA.grid(row=6, column=2, padx=5, pady=(20, 0))
+
+        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
+                                                     text="Select column from main file \nwith required payments")
+        LABLE_AccountNumberFromeTableA.grid(row=8, column=2, padx=5, pady=(20, 0))
+
+
+
+
+
+        # COMBOBOX WITH LABLE COMISSION
+
+        lableComission = ct.CTkLabel(mainFrame, text="Select column with comission %")
+        lableComission.grid(row=10, column=2, padx=20, pady=(10, 0))
+        comboboxSelectCommision = ct.CTkComboBox(mainFrame, values=alphabet, command=self.valueChangedComission,
+                                                 width=175)
+        comboboxSelectCommision.set("Commision column")
+        comboboxSelectCommision.grid(row=11, column=2, padx=(20, 20))
+
+
+
+
+
 
 
 
@@ -406,8 +472,6 @@ class MainClass:
                                 command=lambda: self.hideROWS(switchROWS,Combobox_Row_Start_Key_B, Entry_Row_End_Key_B, ConfirmB))
         switchROWS.grid(row=8, column=0, columnspan=2, padx=20, pady=(5,0))
 
-
-
         Combobox_Row_Start_Key_B.grid_forget()
         Entry_Row_End_Key_B.grid_forget()
         ConfirmB.grid_forget()
@@ -415,38 +479,7 @@ class MainClass:
 
 
 
-
-
-
-
-
-
-
-        # BUTTONS, OPEN THE EXCEL FILES
-        buttonOpenExcel1 = ct.CTkButton(mainFrame, text="Load main excel file", font=('Arial', 17),
-                                                   command=lambda:self.openFileFun2(sheets1, labelFile1, 1))
-        buttonOpenExcel1.grid(row=0, column=0, columnspan=2, padx=(20,10), pady=(20, 0))
-
-        buttonOpenExcel2 = ct.CTkButton(mainFrame, text="Load second excel file", font=('Arial', 17),
-                                                   command=lambda:self.openFileFun2(sheets2, labelFile2, 2))
-        buttonOpenExcel2.grid(row=2, column=0,columnspan=2, padx=(20,10), pady=(7, 0))
-
-        buttonOpenFolder = ct.CTkButton(mainFrame, text="Load folder for export", font=('Arial', 17), command=lambda: self.openFolder(labelFolder))
-        buttonOpenFolder.grid(row=1, column=2, rowspan=2, padx=(10,0), pady=(7, 0))
-
-
-
-
-        # entryPercent= ct.CTkEntry(mainFrame, placeholder_text="Enter value without %")
-        # confirmButtonPercent = ct.CTkButton(mainFrame, text="Confirm", command=lambda: self.confirmEntryPercent(entryPercent))
-        # lablePercent=ct.CTkLabel(mainFrame, text="Enter the percentage that\ncompany receives from each payment\n")
-        # entryPercent.grid(row=9, column=0, )
-        # lablePercent.grid(row=8, column=0, columnspan=2)
-        # confirmButtonPercent.grid(row=9, column=1)
-
-
-
-
+        # BUTTON SYNCHRONIZE WITH PROGRESSBAR AND LABLE OF PROGRESS
 
         labelProgressBar=ct.CTkLabel(mainFrame, text="Click Synchronize to start synchronization", font=('Arial', 17))
         labelProgressBar.grid(row=12, column=0, columnspan=2, padx=20, pady=(5, 0))
@@ -455,12 +488,11 @@ class MainClass:
         progressFn2.grid(row=13, column=0, columnspan=2, padx=20, pady=(0, 10))
         progressFn2.set(0)
 
-
-
-        # BUTTON SYNCHRONIZE
-
         buttonSynchronize=ct.CTkButton(mainFrame, text="Synchronize", font=('Arial', 17),command = lambda:self.Synchronize(alphabet, labelProgressBar, progressFn2))
         buttonSynchronize.grid(row=11, column=0, columnspan=2, padx=20, pady=0)
+
+
+
 
 
         #BUTTON RESTART
@@ -472,58 +504,26 @@ class MainClass:
         quitButton.grid(row=19, column=0, padx=20, pady=(10, 20))
 
 
-        # COMBOBOXES WITH ACCOUNT COLUMNS
 
-        AccountNumberFromeTableA= ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromA, width=175)
-        AccountNumberToTableA=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnToA, width=175)
-        AccountNumberFromTableB=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromB, width=175)
-        AccountNumberFromeTableA.set("CurrentP from column ")
-        AccountNumberToTableA.set("RequiredP to column")
-        AccountNumberFromTableB.set("RequiredP from column")
-        AccountNumberFromeTableA.grid(row=5, column=2, padx=5)
-        AccountNumberToTableA.grid(row=7, column=2, padx=5)
-        AccountNumberFromTableB.grid(row=9, column=2, padx=5)
-
-        # LABLES WITH ACCOUNT COLUMNS DESCRIPTION
-        LABLE_AccountNumberFromeTableA=ct.CTkLabel(mainFrame, text="Select column from second file \nwith the current payments")
-        LABLE_AccountNumberFromeTableA.grid(row=4, column=2, padx=5, pady=(10,0))
-
-        LABLE_AccountNumberToTableA = ct.CTkLabel(mainFrame,
-                                                     text="Select column from main file \nfor loading the current payments")
-        LABLE_AccountNumberToTableA.grid(row=6, column=2, padx=5, pady=(20,0))
-
-        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
-                                                     text="Select column from main file \nwith required payments")
-        LABLE_AccountNumberFromeTableA.grid(row=8, column=2, padx=5, pady=(20,0))
 
         
         
-        lableComission=ct.CTkLabel(mainFrame, text="Select column with comission %")
-        lableComission.grid(row=10, column=2, padx=20, pady=(10,0))
-        comboboxSelectCommision = ct.CTkComboBox(mainFrame, values=alphabet , command=self.valueChangedComission, width=175)
-        comboboxSelectCommision.set("Commision column")
-        comboboxSelectCommision.grid(row=11, column=2,padx=(20,20))
+
+
+
+
 
         root.mainloop()
 
 
 
 
-    def valueChangedComission(self, event):
-        self.comissionColumn=event
-        print(self.comissionColumn)
 
-    def restart(self):
-        os.execl(sys.executable, sys.executable, *sys.argv)
 
-    # this function opens a dialog for folder path
-    def openFolder(self, label):
-        tempdir = filedialog.askdirectory(initialdir="/", title="Select An Image Folder")
-        if len(tempdir) > 0:
-            self.export_folder=str(tempdir)+"/"
-            label.configure(text="Folder path: " + tempdir, text_color='green')
-            label.update()
-            print(self.export_folder)
+
+
+
+
 
 
     #this function hide and show edition
@@ -607,12 +607,24 @@ class MainClass:
 
 
 
+    def FLAT_SUM(self, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum, id):
+        rest = 0
 
+        status_column.value = "PAID"
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = greenFill
+        paid_column.value = paid_sum
 
+        self.Clients.append(Client(id, rest))
 
+    def PARTICALLY_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column ):
+        rest = paid_sum - requested_sum
 
-
-
+        status_column.value = "PARTIALLY PAID"
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = greenFill
+        paid_column.value = paid_sum
+        self.Clients.append(Client(id, rest))
 
 
 
@@ -733,12 +745,10 @@ class MainClass:
                     if row_number >= start1 and row_number <= end1:
                         for j in fromSheet2.iter_rows():
 
-                            #this line delete all non-digit symbols from the payment number
-                            KEY = "".join(c for c in str(j[KEY_B].value) if c.isdecimal())
+                            KEY = "".join(c for c in str(j[KEY_B].value) if c.isdecimal())  #this line delete all non-digit symbols from the payment number
 
-                            if KEY == id:
+                            if KEY == id :
                                 if str(j[INVOICE_NUMBER_FROM_A].value) !="None":
-
 
                                     paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
                                     requested_sum = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
@@ -750,28 +760,12 @@ class MainClass:
 
 
                                     if requested_sum == paid_sum:
-                                        rest=0
-                                        #rest_column.value = rest
-                                        #rest_column.fill = yellowFill
-
-                                        status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = paid_sum
-
-                                        self.Clients.append(Client(id, rest))
+                                        self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum, id)
 
                                     elif requested_sum > paid_sum != 0:
+                                        self.PARTICALLY_SUM(paid_sum,requested_sum,status_column,INVOICE_NUMBER_TO_A, third_sheet,row_number,greenFill,
+                                                            paid_column)
 
-                                        rest = paid_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill= yellowFill
-
-                                        status_column.value = "PARTIALLY PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = paid_sum
-                                        self.Clients.append(Client(id))
 
                                     elif paid_sum == 0:
 
@@ -850,38 +844,18 @@ class MainClass:
                                         payments[Key] += paid_sum
 
                                         if requested_sum == paid_sum:
-                                            rest = 0
-                                            #rest_column.value = rest
-                                            #rest_column.fill = yellowFill
-
-
-                                            status_column.value = "PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = payments[Key]
-                                            self.Clients.append(Client(id))
-
+                                            self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                          greenFill, paid_column, payments[Key], id)
 
 
                                         elif requested_sum > paid_sum != 0:
-                                            rest = float(payments[Key]) - requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill = redFill
+                                            self.PARTICALLY_SUM(float(payments[Key]), requested_sum, status_column,
+                                                                INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
+                                                                paid_column)
 
-
-                                            status_column.value = "PARTIALLY PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = payments[Key]
-                                            self.Clients.append(Client(id))
 
 
                                         elif paid_sum == 0:
-                                            rest = float(payments[Key]) - requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill = redFill
-
-
                                             status_column.value = "UNPAID"
                                             for column in range(1, INVOICE_NUMBER_TO_A + 3):
                                                 third_sheet.cell(row=row_number, column=column).fill = redFill
@@ -965,25 +939,14 @@ class MainClass:
 
 
                                 all_sum+=payments[Key]
-                                if str(paid_column.value)!="Paid":
+                                if str(status_column.value) != "Paid":
                                     if requested_sum == all_sum:
-                                        rest = 0
-                                        #rest_column.value = rest
-                                        #rest_column.fill = yellowFill
-
-
-                                        status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = all_sum
+                                        self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                      greenFill, paid_column, all_sum, id)
                                         all_sum=0
-                                        self.Clients.append(Client(id))
 
                                     elif requested_sum > all_sum != 0:
                                         rest = all_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
 
                                         status_column.value = "PARTIALLY PAID"
                                         for column in range(1, INVOICE_NUMBER_TO_A + 3):
@@ -1033,12 +996,11 @@ class MainClass:
 
                 All_requested=0
                 All_payed=0
-                Payments_left=0
                 Payments_rest=0
                 last_row=0
                 All_comission=0
 
-                Receiver_percentage=0
+
 
 
                 for i in fromSheet1.iter_rows():
@@ -1182,6 +1144,7 @@ class MainClass:
         progress.update()
 
 
+
     def valueChangedColumnFromA(self,event):
         self.invoiceDataFrom=event
         print(self.invoiceDataFrom)
@@ -1198,21 +1161,16 @@ class MainClass:
     def sheetChangedOne(self, event):
         self.sheetFirst = event
 
-
     def sheetChangedTwo(self, event):
         self.sheetSecond = event
 
 
-    def confirmEntryPercent(self, UserPercent):
-        try:
-            self.percent = float(UserPercent.get())
-            print(self.percent)
-            UserPercent.configure(text_color="green")
-            UserPercent.configure(placeholder_text="Input percent value")
 
-        except:
-            UserPercent.configure(text_color="red")
-            UserPercent.configure(placeholder_text="Value must be a num!")
+    # CHANGING COMBOBOX WITH COMISSION VALUE
+    def valueChangedComission(self, event):
+        self.comissionColumn = event
+        print(self.comissionColumn)
+
 
 
     def valueChangedRowF2(self, event, isKey, table):
@@ -1239,6 +1197,8 @@ class MainClass:
                 print(self.colB)
 
 
+
+    # CONFIRMING END ROW
     def confirmEntryF2(self, endRow, Is):
         try:
             if Is=='A':
@@ -1254,6 +1214,9 @@ class MainClass:
             endRow.configure(text_color="red")
             endRow.configure(placeholder_text="Value must be a num!")
 
+
+
+    #FUNCTION THAT OPENS A DIRECTORY TO CHOOSE EXCEL FILES
     def openFileFun2(self, comboboxFirst, label, num):
         tempdir = filedialog.askopenfilename(initialdir="/", title="Select An Excel File", filetypes=(
             ("excel files", "*.xlsx"),("old excel files", "*.xls"), ("All files", "*.*")))
@@ -1282,6 +1245,20 @@ class MainClass:
         label.update()
 
 
+        # FUNCTION THAT OPENS A DIRECTORY TO CHOOSE FOLDER
+    def openFolder(self, label):
+            tempdir = filedialog.askdirectory(initialdir="/", title="Select An Image Folder")
+            if len(tempdir) > 0:
+                self.export_folder = str(tempdir) + "/"
+                label.configure(text="Folder path: " + tempdir, text_color='green')
+                label.update()
+                print(self.export_folder)
+
+
+    def restart(self):
+            os.execl(sys.executable, sys.executable, *sys.argv)
+
+
 
 
 class Client:
@@ -1290,7 +1267,9 @@ class Client:
         self.Account_Number = Account_Number
         self.Accountant_Account_Number = Accountant_Account_Number
 
-
+class ClientBank:
+    def __init__(self ):
+        self.Lieferant=0
 
 
 m = MainClass()
