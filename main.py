@@ -332,9 +332,6 @@ class MainClass:
         root.title("Westa GmbH Payment Verification")
         root.configure(background="black")
 
-        #function 1
-
-        # ALL FRAMES
 
         #Frame
         mainFrame= ct.CTkFrame(root)
@@ -640,6 +637,14 @@ class MainClass:
 
 
 
+
+
+
+
+
+
+
+
     def Synchronize(self, alphabet, label, progress):
         if self.sheetFirst != None and self.sheetSecond != None and self.export_folder != None :
 
@@ -679,18 +684,29 @@ class MainClass:
                 INVOICE_NUMBER_TO_A+=1
                 COMISSION_COLUMN+=1
 
+                # Open Workbooks
                 fromTable1 = openpyxl.load_workbook(self.firstfileF2)
                 fromTable2 = openpyxl.load_workbook(self.secondfileF2)
+                thirdTable = openpyxl.Workbook()
+
+                #Open Sheets
                 fromSheet1 = fromTable1[self.sheetFirst]
                 fromSheet2= fromTable2[self.sheetSecond]
-
-                counter_of_actions += 1
-                self.updating_scale(label,progress,counter_of_actions,all_actions, "Copying table A")
-
-                thirdTable = openpyxl.Workbook()
                 thirdTable.create_sheet("Errors")
 
-                path = self.export_folder + "OutputResult.xlsx"
+
+                #Scale progress
+                counter_of_actions += 1
+                self.updating_scale(label,progress,counter_of_actions,all_actions, "Copying table A")
+                i=0
+                while True:
+
+                    if os.path.exists(self.export_folder+"OutputResult"+str(i)+'.xlsx'):
+                        i+=1
+                    else :
+                        path = self.export_folder + "OutputResult"+str(i)+".xlsx"
+                        break
+
                 thirdTable.save(path)
                 thirdTable.close()
 
@@ -727,13 +743,17 @@ class MainClass:
                     end1 = int(self.endB)
 
 
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2).value = "Payment commission"
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).value = "Payment status"
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).value = "Paid amount"
+                cell_comission=third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2)
+                cell_status=third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1)
+                cell_paid=third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A)
 
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2).fill=darkblueFill
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).fill=darkblueFill
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).fill=darkblueFill
+                cell_comission.value = "Payment commission"
+                cell_status.value = "Payment status"
+                cell_paid.value = "Paid amount"
+
+                cell_comission.fill=darkblueFill
+                cell_status.fill=darkblueFill
+                cell_paid.fill=darkblueFill
 
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A-1]].width=18
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A]].width = 18
@@ -793,9 +813,15 @@ class MainClass:
 
                                 break
 
+
+
+
                 counter_of_actions += 1
                 self.updating_scale(label, progress, counter_of_actions, all_actions,
                                     str(counter_of_actions) + '/' + str(all_actions))
+
+
+
 
 
 
