@@ -864,7 +864,7 @@ class MainClass:
                                                     counter += 1
                                                 (third_sheet.cell(row=row_number,
                                                                   column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(
-                                                    paid_sum)
+                                                    round(paid_sum,1))
                                                 third_sheet.column_dimensions[
                                                     alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
                                                 if self.max < counter:
@@ -930,6 +930,9 @@ class MainClass:
                                                 third_sheet.cell(row=row_number, column=column).fill = yellowFill
                                             break
                                         # Selecting columns for inserting
+
+                                        if self.DoDataOrNot == True:
+                                            date_paid = str(j[PAYMENT_DATE_COLUMN].value)
                                         status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
                                         paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
                                         #rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
@@ -974,7 +977,7 @@ class MainClass:
                                                             counter += 1
                                                         (third_sheet.cell(row=row_number,
                                                                           column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(
-                                                            paid_sum)
+                                                            round(paid_sum,1))
                                                         third_sheet.column_dimensions[
                                                             alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
                                                         if self.max<counter:
@@ -1042,46 +1045,55 @@ class MainClass:
                                     payments[Key] = 0
                                 third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value=''
 
+                                if self.DoDataOrNot == True:
+                                    date_paid = str(j[PAYMENT_DATE_COLUMN].value)
 
                                 # Selecting columns for inserting
                                 status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
                                 paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
                                 #rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
 
-
+                                paid_sum = all_sum
                                 all_sum += payments[Key]
+
                                 if str(status_column.value) != "PAID":
                                     if requested_sum == all_sum:
                                         self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
                                                       greenFill, paid_column, all_sum, id)
-                                        all_sum=0
+
                                         if self.DoDataOrNot == True:
                                             counter = 0
                                             while str((third_sheet.cell(row=row_number,
                                                                         column=INVOICE_NUMBER_TO_A + 3 + counter)).value) != "None":
                                                 counter += 1
                                             (third_sheet.cell(row=row_number,
-                                                              column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(
-                                                all_sum)
+                                                              column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(round(paid_sum, 1))
+
                                             third_sheet.column_dimensions[
                                                 alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
+                                            if self.max < counter:
+                                                self.max = counter
+                                        all_sum = 0
 
                                     elif requested_sum > all_sum != 0:
                                         self.PARTICALLY_SUM(all_sum, requested_sum, status_column,
                                                             INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
                                                             paid_column, id)
 
-                                        all_sum=0
+
                                         if self.DoDataOrNot == True:
                                             counter = 0
                                             while str((third_sheet.cell(row=row_number,
                                                                         column=INVOICE_NUMBER_TO_A + 3 + counter)).value) != "None":
+
                                                 counter += 1
                                             (third_sheet.cell(row=row_number,
                                                               column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(
-                                                all_sum)
+                                                round(paid_sum,1))
                                             third_sheet.column_dimensions[
                                                 alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
+                                            if self.max < counter:
+                                                self.max = counter
 
                                     elif all_sum == 0:
                                         self.NULL_SUM(all_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A,
@@ -1106,15 +1118,18 @@ class MainClass:
                                             third_sheet.cell(row=row_number,column=column).fill=greenFill
                                         paid_column.value = requested_sum
                                         if self.DoDataOrNot == True:
+
                                             counter = 0
                                             while str((third_sheet.cell(row=row_number,
                                                                         column=INVOICE_NUMBER_TO_A + 3 + counter)).value) != "None":
                                                 counter += 1
                                             (third_sheet.cell(row=row_number,
                                                               column=INVOICE_NUMBER_TO_A + 3 + counter)).value = date_paid + ',  ' + str(
-                                                all_sum)
+                                                requested_sum)
                                             third_sheet.column_dimensions[
                                                 alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
+                                            if self.max < counter:
+                                                self.max = counter
 
 
                 # updating a progress scale
