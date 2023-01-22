@@ -429,10 +429,14 @@ class MainClass:
         AccountNumberFromTableB.grid(row=9, column=2, padx=5)
 
 
+        KontoLabel = ct.CTkLabel(mainFrame, text='Select column with Konto\nin second table')
+        KontoLabel.grid(row=4, column=3, padx=5)
         Konto=ct.CTkComboBox(mainFrame, values=alphabet, width=185, command = self.changeKontoColumn)
         Konto.set("Client name from column")
         Konto.grid(row=5, column=3, padx=5)
 
+        LieferantLabel=ct.CTkLabel(mainFrame, text='Select column with\n lieferant in secong table')
+        LieferantLabel.grid(row=6, column=3, padx=5)
         Lieferant = ct.CTkComboBox(mainFrame, values=alphabet, width=185, command=self.changeLieferantColumn)
         Lieferant.set("Client accountant number")
         Lieferant.grid(row=7, column=3, padx=5)
@@ -518,7 +522,7 @@ class MainClass:
 
         #BUTTON RESTART
         restartButton = ct.CTkButton(mainFrame, text="Restart", font=('Arial', 17), command=self.restart)
-        restartButton.grid(row=19, column=2, padx=(20,10), pady=(15, 20))
+        restartButton.grid(row=19, column=3, padx=(20,10), pady=(15, 20))
 
         #BUTTON QUIT
         quitButton = ct.CTkButton(mainFrame, text="Quit", font=('Arial', 17), command=sys.exit)
