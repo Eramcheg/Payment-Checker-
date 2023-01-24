@@ -4,9 +4,11 @@ from tkinter import filedialog
 from copy import copy
 import customtkinter as ct
 import openpyxl
+import re
 from xls2xlsx import XLS2XLSX
 from PIL import JpegImagePlugin
 from openpyxl.styles import Color, PatternFill, Font, Border
+import json
 
 ct.set_appearance_mode('dark')
 ct.set_default_color_theme("dark-blue")
@@ -15,46 +17,46 @@ JpegImagePlugin._getmp = lambda x: None
 class MainClass:
     def __init__(self):
 
+        file = open('test.json')
+        data = json.load(file)
         self.Clients=[]
 
         self.errors = []
 
 
-        self.percent=0
+
 
         # function 2
         self.sheetFirst=None
         self.sheetSecond=None
-        self.firstfileF2=''
-        self.secondfileF2=''
-        self.onefileF2=''
+        self.firstfileF2 = ''
+        self.secondfileF2 = ''
 
-        self.colKeyA = 'A'
-        self.colKeyB = 'A'
+        self.colKeyA = data['KeyA']
+        self.colKeyB = data['KeyB']
         self.colA = 'B'
         self.colB = 'B'
         self.startA = '2'
         self.endA = '1'
         self.startB = '2'
         self.endB = '1'
+        self.DataColumn =data["DateCol"]
+        self.DoDataOrNot = False
 
-        self.TwoOrOne = None
+        self.Konto = data['KontoCol']
+        self.Lieferant = data['Lieferant']
 
-        self.columnsFrom=[]
-        self.columnsTo=[]
-        #self.indexColumnsFrom=['B','B','B','B']
-        #self.indexColumnsTo=['C','D','E','F']
-        self.indexColumnsFrom=[]
-        self.indexColumnsTo=[]
 
-        self.invoiceDataFrom="A"
-        self.invoiceDataTo='A'
+        self.invoiceDataCurrent = data["CurrentPayCol"]
 
-        self.invoiceDataFromB='A'
+        self.invoiceDataLoad = data["PayColNew"]
 
-        self.comissionColumn='A'
+        self.invoiceDataRequired = data["RequiredPayCol"]
+
+        self.comissionColumn = data["ComissionCol"]
 
         self.export_folder=None
+        self.max = 0
 
     def startApp(self):
         root = ct.CTk()
@@ -64,7 +66,8 @@ class MainClass:
 
         frame=ct.CTkFrame(root)
         frame.grid(row=0, column=0, rowspan=4,columnspan=4, sticky="nsew")
-
+        file = open('test.json')
+        data = json.load(file)
 
 
 
@@ -340,9 +343,6 @@ class MainClass:
         root.title("Westa GmbH Payment Verification")
         root.configure(background="black")
 
-        #function 1
-
-        # ALL FRAMES
 
         #Frame
         mainFrame= ct.CTkFrame(root)
@@ -353,18 +353,12 @@ class MainClass:
 
 
 
-        labelFile1 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
-        labelFile1.grid(row=1, column=0, columnspan=2, padx=(20,10), pady=0)
-
-        labelFile2 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
-        labelFile2.grid(row=3, column=0, columnspan=2, padx=(20,10), pady=0)
-
-        labelFolder = ct.CTkLabel(mainFrame, text="Folder for export: folder is not selected")
-        labelFolder.grid(row=2, column=2, rowspan=2, padx=(20,10), pady=(0, 5))
 
 
 
-        # SHEETS
+
+        # SHEETS OF UPLOADED FILES
+
         labelSheet1=ct.CTkLabel(mainFrame, text="Sheet from table A")
         labelSheet1.grid(row=4, column=0, padx=(20,5),pady=(5,0))
         sheets1 = ct.CTkComboBox(mainFrame, values=[], command=self.sheetChangedOne)
@@ -378,19 +372,145 @@ class MainClass:
         sheets2.set("Sheet 2 (to) ")
 
 
+        # LABELS FOR UPLOADING FILES
+
+        labelFile1 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
+        labelFile1.grid(row=1, column=0, columnspan=2, padx=(20, 10), pady=0)
+
+        labelFile2 = ct.CTkLabel(mainFrame, text="File path: file is not selected")
+        labelFile2.grid(row=3, column=0, columnspan=2, padx=(20, 10), pady=0)
+
+        labelFolder = ct.CTkLabel(mainFrame, text="Folder for export: folder is not selected")
+        labelFolder.grid(row=2, column=2, rowspan=2, padx=(20, 10), pady=(0, 5))
 
 
-        comboboxColumnKeyA = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "A"))
-        comboboxColumnKeyB = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "B"))
+
+        # BUTTONS, OPEN THE EXCEL FILES
+
+        buttonOpenExcel1 = ct.CTkButton(mainFrame, text="Load main excel file", font=('Arial', 17),
+                                        command=lambda: self.openFileFun2(sheets1, labelFile1, 1))
+        buttonOpenExcel1.grid(row=0, column=0, columnspan=2, padx=(20, 10), pady=(20, 0))
+
+        buttonOpenExcel2 = ct.CTkButton(mainFrame, text="Load second excel file", font=('Arial', 17),
+                                        command=lambda: self.openFileFun2(sheets2, labelFile2, 2))
+        buttonOpenExcel2.grid(row=2, column=0, columnspan=2, padx=(20, 10), pady=(7, 0))
+
+        buttonOpenFolder = ct.CTkButton(mainFrame, text="Load folder for export", font=('Arial', 17),
+                                        command=lambda: self.openFolder(labelFolder))
+        buttonOpenFolder.grid(row=1, column=2, rowspan=2, padx=(10, 0), pady=(7, 0))
+
+
+
+        # KEYS COMBOBOXES AND LABELS
+
+        comboboxColumnKeyA = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "A", data))
+        comboboxColumnKeyB = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event:self.valueChangedRowF2(event, "Key", "B", data))
 
         comboboxColumnKeyA.grid(row=7, column=0, padx=(20,5), pady=(5, 0))
         comboboxColumnKeyB.grid(row=7, column=1, padx=(10,5), pady=(5, 0))
 
+        comboboxColumnKeyA.set(self.colKeyA)
+        comboboxColumnKeyB.set(self.colKeyB)
 
         labelKeyA=ct.CTkLabel(mainFrame, text="Key column A")
         labelKeyB=ct.CTkLabel(mainFrame, text="Key column B")
         labelKeyA.grid(row=6, column=0, padx=20, pady=(4, 0))
         labelKeyB.grid(row=6, column=1, padx=20, pady=(4, 0))
+
+
+
+
+
+        # COMBOBOXES WITH ACCOUNT COLUMNS
+
+        AccountNumberFromTableA = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event: self.valueChangedColumnFromA(event, data),
+                                                  width=175)
+        if self.invoiceDataCurrent != 'A':
+            AccountNumberFromTableA.set(self.invoiceDataCurrent)
+        else:
+            AccountNumberFromTableA.set("CurrentP from column ")
+
+
+
+        AccountNumberToTableA = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event: self.valueChangedColumnToA(event, data),
+                                               width=175)
+        if self.invoiceDataLoad != 'A':
+            AccountNumberToTableA.set(self.invoiceDataLoad)
+        else:
+            AccountNumberToTableA.set("RequiredP to column")
+
+
+        AccountNumberFromTableB = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event: self.valueChangedColumnFromB(event, data),
+                                                 width=175)
+        if self.invoiceDataRequired != 'A':
+            AccountNumberFromTableB.set(self.invoiceDataRequired)
+        else:
+            AccountNumberFromTableB.set("RequiredP from column")
+
+
+        AccountNumberFromTableA.grid(row=5, column=2, padx=5)
+        AccountNumberToTableA.grid(row=7, column=2, padx=5)
+        AccountNumberFromTableB.grid(row=9, column=2, padx=5)
+
+
+        KontoLabel = ct.CTkLabel(mainFrame, text='Select column with Konto\nin second table')
+        KontoLabel.grid(row=4, column=3, padx=5)
+        Konto=ct.CTkComboBox(mainFrame, values=alphabet, width=185, command=lambda event: self.changeKontoColumn(event, data))
+
+        if self.Konto!='A':
+            Konto.set(self.Konto)
+        else:
+            Konto.set("Client name from column")
+        Konto.grid(row=5, column=3, padx=5)
+
+        LieferantLabel=ct.CTkLabel(mainFrame, text='Select column with\n lieferant in secong table')
+        LieferantLabel.grid(row=6, column=3, padx=5)
+        Lieferant = ct.CTkComboBox(mainFrame, values=alphabet, width=185, command=lambda event: self.changeLieferantColumn(event, data))
+        if self.Lieferant != 'A':
+            Lieferant.set(self.Lieferant)
+        else:
+            Lieferant.set("Client accountant number")
+        Lieferant.grid(row=7, column=3, padx=5)
+
+
+
+
+
+
+        # LABLES WITH ACCOUNT COLUMNS DESCRIPTION
+        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
+                                                     text="Select column from second file \nwith the current payments")
+
+        LABLE_AccountNumberFromeTableA.grid(row=4, column=2, padx=5, pady=(10, 0))
+
+        LABLE_AccountNumberToTableA = ct.CTkLabel(mainFrame,
+                                                  text="Select column from main file \nfor loading the current payments")
+        LABLE_AccountNumberToTableA.grid(row=6, column=2, padx=5, pady=(20, 0))
+
+        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
+                                                     text="Select column from main file \nwith required payments")
+        LABLE_AccountNumberFromeTableA.grid(row=8, column=2, padx=5, pady=(20, 0))
+
+
+
+
+
+        # COMBOBOX WITH LABLE COMISSION
+
+        lableComission = ct.CTkLabel(mainFrame, text="Select column with comission %")
+        lableComission.grid(row=10, column=2, padx=20, pady=(10, 0))
+        comboboxSelectCommision = ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event: self.valueChangedComission(event, data),
+                                                 width=175)
+        if self.comissionColumn == 'A':
+            comboboxSelectCommision.set("Commision column")
+        else:
+            comboboxSelectCommision.set(self.comissionColumn)
+        comboboxSelectCommision.grid(row=11, column=2, padx=(20, 20))
+
+
+
+
+
 
 
 
@@ -401,141 +521,69 @@ class MainClass:
         Combobox_Row_Start_Key_B.set("Enter first B row")
         Entry_Row_End_Key_B = ct.CTkEntry(mainFrame, placeholder_text="Enter end B row")
         ConfirmB=ct.CTkButton(mainFrame, text="Confirm B", command=lambda:self.confirmEntryF2(Entry_Row_End_Key_B, 'B'))
+        ComboboxDate=ct.CTkComboBox(mainFrame, values=alphabet, command=lambda event: self.ChangedDateColumn(event, data))
+        if self.DataColumn!='A':
+            ComboboxDate.set(self.DataColumn)
+        else:
+            ComboboxDate.set("Сolumn with Date")
+
+        checkBox= ct.CTkCheckBox(mainFrame, text="Date Column", command=lambda:self.changeDate(checkBox), onvalue="on", offvalue="off")
 
         switchROWS = ct.CTkSwitch(master=mainFrame, text="Show edition", onvalue="on", offvalue="off",
-                                command=lambda: self.hideROWS(switchROWS,Combobox_Row_Start_Key_B, Entry_Row_End_Key_B, ConfirmB))
+                                command=lambda: self.hideROWS(switchROWS,Combobox_Row_Start_Key_B, Entry_Row_End_Key_B, ConfirmB, ComboboxDate, checkBox))
         switchROWS.grid(row=8, column=0, columnspan=2, padx=20, pady=(5,0))
 
-
-
         Combobox_Row_Start_Key_B.grid_forget()
+        checkBox.grid_forget()
         Entry_Row_End_Key_B.grid_forget()
         ConfirmB.grid_forget()
+        ComboboxDate.grid_forget()
 
 
 
 
-
-
-
-
-
-
-
-        # BUTTONS, OPEN THE EXCEL FILES
-        buttonOpenExcel1 = ct.CTkButton(mainFrame, text="Load main excel file", font=('Arial', 17),
-                                                   command=lambda:self.openFileFun2(sheets1, labelFile1, 1))
-        buttonOpenExcel1.grid(row=0, column=0, columnspan=2, padx=(20,10), pady=(20, 0))
-
-        buttonOpenExcel2 = ct.CTkButton(mainFrame, text="Load second excel file", font=('Arial', 17),
-                                                   command=lambda:self.openFileFun2(sheets2, labelFile2, 2))
-        buttonOpenExcel2.grid(row=2, column=0,columnspan=2, padx=(20,10), pady=(7, 0))
-
-        buttonOpenFolder = ct.CTkButton(mainFrame, text="Load folder for export", font=('Arial', 17), command=lambda: self.openFolder(labelFolder))
-        buttonOpenFolder.grid(row=1, column=2, rowspan=2, padx=(10,0), pady=(7, 0))
-
-
-
-
-        # entryPercent= ct.CTkEntry(mainFrame, placeholder_text="Enter value without %")
-        # confirmButtonPercent = ct.CTkButton(mainFrame, text="Confirm", command=lambda: self.confirmEntryPercent(entryPercent))
-        # lablePercent=ct.CTkLabel(mainFrame, text="Enter the percentage that\ncompany receives from each payment\n")
-        # entryPercent.grid(row=9, column=0, )
-        # lablePercent.grid(row=8, column=0, columnspan=2)
-        # confirmButtonPercent.grid(row=9, column=1)
-
-
-
-
+        # BUTTON SYNCHRONIZE WITH PROGRESSBAR AND LABLE OF PROGRESS
 
         labelProgressBar=ct.CTkLabel(mainFrame, text="Click Synchronize to start synchronization", font=('Arial', 17))
-        labelProgressBar.grid(row=12, column=0, columnspan=2, padx=20, pady=(5, 0))
+        labelProgressBar.grid(row=13, column=0, columnspan=2, padx=20, pady=(5, 0))
 
         progressFn2=ct.CTkProgressBar(mainFrame)
-        progressFn2.grid(row=13, column=0, columnspan=2, padx=20, pady=(0, 10))
+        progressFn2.grid(row=14, column=0, columnspan=2, padx=20, pady=(0, 10))
         progressFn2.set(0)
 
+        buttonSynchronize=ct.CTkButton(mainFrame, text="Synchronize", font=('Arial', 17),command = lambda:self.Synchronize(alphabet, labelProgressBar, progressFn2, data))
+        buttonSynchronize.grid(row=12, column=0, columnspan=2, padx=20, pady=0)
 
 
-        # BUTTON SYNCHRONIZE
 
-        buttonSynchronize=ct.CTkButton(mainFrame, text="Synchronize", font=('Arial', 17),command = lambda:self.Synchronize(alphabet, labelProgressBar, progressFn2))
-        buttonSynchronize.grid(row=11, column=0, columnspan=2, padx=20, pady=0)
 
 
         #BUTTON RESTART
         restartButton = ct.CTkButton(mainFrame, text="Restart", font=('Arial', 17), command=self.restart)
-        restartButton.grid(row=19, column=2, padx=(20,10), pady=(15, 20))
+        restartButton.grid(row=19, column=3, padx=(20,10), pady=(15, 20))
 
         #BUTTON QUIT
         quitButton = ct.CTkButton(mainFrame, text="Quit", font=('Arial', 17), command=sys.exit)
         quitButton.grid(row=19, column=0, padx=20, pady=(10, 20))
 
 
-        # COMBOBOXES WITH ACCOUNT COLUMNS
-
-        AccountNumberFromeTableA= ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromA, width=175)
-        AccountNumberToTableA=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnToA, width=175)
-        AccountNumberFromTableB=ct.CTkComboBox( mainFrame , values=alphabet, command=self.valueChangedColumnFromB, width=175)
-        AccountNumberFromeTableA.set("CurrentP from column ")
-        AccountNumberToTableA.set("RequiredP to column")
-        AccountNumberFromTableB.set("RequiredP from column")
-        AccountNumberFromeTableA.grid(row=5, column=2, padx=5)
-        AccountNumberToTableA.grid(row=7, column=2, padx=5)
-        AccountNumberFromTableB.grid(row=9, column=2, padx=5)
-
-        # LABLES WITH ACCOUNT COLUMNS DESCRIPTION
-        LABLE_AccountNumberFromeTableA=ct.CTkLabel(mainFrame, text="Select column from second file \nwith the current payments")
-        LABLE_AccountNumberFromeTableA.grid(row=4, column=2, padx=5, pady=(10,0))
-
-        LABLE_AccountNumberToTableA = ct.CTkLabel(mainFrame,
-                                                     text="Select column from main file \nfor loading the current payments")
-        LABLE_AccountNumberToTableA.grid(row=6, column=2, padx=5, pady=(20,0))
-
-        LABLE_AccountNumberFromeTableA = ct.CTkLabel(mainFrame,
-                                                     text="Select column from main file \nwith required payments")
-        LABLE_AccountNumberFromeTableA.grid(row=8, column=2, padx=5, pady=(20,0))
-
-        
-        
-        lableComission=ct.CTkLabel(mainFrame, text="Select column with comission %")
-        lableComission.grid(row=10, column=2, padx=20, pady=(10,0))
-        comboboxSelectCommision = ct.CTkComboBox(mainFrame, values=alphabet , command=self.valueChangedComission, width=175)
-        comboboxSelectCommision.set("Commision column")
-        comboboxSelectCommision.grid(row=11, column=2,padx=(20,20))
-
         root.mainloop()
 
 
-
-
-    def valueChangedComission(self, event):
-        self.comissionColumn=event
-        print(self.comissionColumn)
-
-    def restart(self):
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
-    # this function opens a dialog for folder path
-    def openFolder(self, label):
-        tempdir = filedialog.askdirectory(initialdir="/", title="Select An Image Folder")
-        if len(tempdir) > 0:
-            self.export_folder=str(tempdir)+"/"
-            label.configure(text="Folder path: " + tempdir, text_color='green')
-            label.update()
-            print(self.export_folder)
-
-
     #this function hide and show edition
-    def hideROWS(self,switch, combobox, entry, confirm):
+    def hideROWS(self,switch, combobox, entry, confirm, Date, checkbox):
         if switch.get() == 'on':
             combobox.grid(row=9, column=0, padx=(20, 5), pady=(5, 0))
             entry.grid(row=9, column=1, padx=(10, 5), pady=(5, 0))
             confirm.grid(row=10, column=0, columnspan=2, padx=20, pady=(5,15))
+            Date.grid(row=11,column=0,padx=(20,5), pady=5)
+            checkbox.grid(row=11,column=1,padx=(20,5), pady=5)
         else:
             combobox.grid_remove()
             entry.grid_remove()
             confirm.grid_remove()
+            Date.grid_remove()
+            checkbox.grid_remove()
 
 
 
@@ -607,6 +655,38 @@ class MainClass:
 
 
 
+    def FLAT_SUM(self, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum, id, paymentStatus, Key):
+        rest = 0
+
+        status_column.value = "PAID"
+        paymentStatus[Key] = ['PAID', paid_sum, paid_sum]
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = greenFill
+        paid_column.value = paid_sum
+
+        self.Clients.append(Client(id, rest))
+
+    def PARTICALLY_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, id, paymentStatus, Key):
+        rest = paid_sum - requested_sum
+
+        status_column.value = "PARTIALLY PAID"
+        paymentStatus[Key] = ['PARTIALLY PAID', requested_sum, paid_sum]
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = greenFill
+        paid_column.value = paid_sum
+        self.Clients.append(Client(id, rest))
+
+
+    def NULL_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, redFill, paid_column, id, paymentStatus, Key):
+        rest = paid_sum - requested_sum
+
+        status_column.value = "UNPAID"
+        paymentStatus[Key] = ['UNPAID', requested_sum, 0]
+        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+            third_sheet.cell(row=row_number, column=column).fill = redFill
+        paid_column.value = 0
+
+        self.Clients.append(Client(id, rest))
 
 
 
@@ -617,7 +697,11 @@ class MainClass:
 
 
 
-    def Synchronize(self, alphabet, label, progress):
+
+
+    def Synchronize(self, alphabet, label, progress, data):
+        with open("test.json", "w") as outfile:
+            outfile.write(json.dumps(data, indent=4))
         if self.sheetFirst != None and self.sheetSecond != None and self.export_folder != None :
 
             self.errors=[]
@@ -630,10 +714,15 @@ class MainClass:
 
             KEY_A = 0
             KEY_B = 0
-            INVOICE_NUMBER_FROM_A = 0
+            INVOICE_NUMBER_CURRENT = 0
             INVOICE_NUMBER_TO_A = 0
-            INVOICE_NUMBER_FROM_B = 0
-            COMISSION_COLUMN=0
+            INVOICE_NUMBER_REQUIRED = 0
+            COMISSION_COLUMN = 0
+            PAYMENT_DATE_COLUMN = 0
+
+            Konto = 0
+            Lieferant = 0
+
 
             try:
 
@@ -642,32 +731,50 @@ class MainClass:
                         KEY_A = i
                     if alphabet[i] == self.colKeyB:
                         KEY_B = i
-                    if alphabet[i] == self.invoiceDataFrom:
-                        INVOICE_NUMBER_FROM_A=i
-                    if alphabet[i]== self.invoiceDataTo:
+                    if alphabet[i] == self.invoiceDataCurrent:
+                        INVOICE_NUMBER_CURRENT=i
+                    if alphabet[i] == self.invoiceDataLoad:
                         INVOICE_NUMBER_TO_A = i
-                    if alphabet[i] == self.invoiceDataFromB:
-                        INVOICE_NUMBER_FROM_B = i
+                    if alphabet[i] == self.invoiceDataRequired:
+                        INVOICE_NUMBER_REQUIRED = i
                     if alphabet[i] == self.comissionColumn:
                         COMISSION_COLUMN=i
+                    if alphabet[i] == self.DataColumn:
+                        PAYMENT_DATE_COLUMN=i
+                    if alphabet[i] == self.Konto:
+                        Konto = i
+                    if alphabet[i] == self.Lieferant:
+                        Lieferant = i
 
 
-                INVOICE_NUMBER_FROM_B +=1
+                INVOICE_NUMBER_REQUIRED +=1
+                # INVOICE_NUMBER_CURRENT+=1
                 INVOICE_NUMBER_TO_A+=1
                 COMISSION_COLUMN+=1
 
+                # Open Workbooks
                 fromTable1 = openpyxl.load_workbook(self.firstfileF2)
                 fromTable2 = openpyxl.load_workbook(self.secondfileF2)
-                fromSheet1 = fromTable1[self.sheetFirst]
-                fromSheet2= fromTable2[self.sheetSecond]
-
-                counter_of_actions += 1
-                self.updating_scale(label,progress,counter_of_actions,all_actions, "Copying table A")
-
                 thirdTable = openpyxl.Workbook()
+
+                #Open Sheets
+                fromSheet1 = fromTable1[self.sheetFirst]
+                fromSheet2 = fromTable2[self.sheetSecond]
                 thirdTable.create_sheet("Errors")
 
-                path = self.export_folder + "OutputResult.xlsx"
+
+                #Scale progress
+                counter_of_actions += 1
+                self.updating_scale(label,progress,counter_of_actions,all_actions, "Copying table A")
+                i = 0
+                while True:
+
+                    if os.path.exists(self.export_folder+"OutputResult"+str(i)+'.xlsx'):
+                        i+=1
+                    else :
+                        path = self.export_folder + "OutputResult"+str(i)+".xlsx"
+                        break
+
                 thirdTable.save(path)
                 thirdTable.close()
 
@@ -681,8 +788,8 @@ class MainClass:
                 greenFill = PatternFill(start_color='0000FF00',
                                         end_color='0000FF00',
                                         fill_type='solid')
-                redFill = PatternFill(start_color='FFFF0000',
-                                      end_color='FFFF0000',
+                redFill = PatternFill(start_color='FFFFFFFF',
+                                      end_color='FFFFFFFF',
                                       fill_type='solid')
                 orangeFill= PatternFill(start_color='00D9B900', end_color='00D9B900', fill_type='solid')
 
@@ -692,6 +799,9 @@ class MainClass:
 
                 darkblueFill=PatternFill(start_color='00899EF0', end_color='00899EF0', fill_type='solid')
 
+                lightGreenFill = PatternFill(start_color='00C5DEAD', end_color='00C5DEAD', fill_type='solid')
+
+                lightOrangeFill = PatternFill(start_color='00FFAB83', end_color='00FFAB83', fill_type='solid')
 
                 #this cycle select the start and end row based on user choice or without it
                 arr=[]
@@ -703,104 +813,171 @@ class MainClass:
                 else:
                     end1 = int(self.endB)
 
+                endMain=0
+                for i in fromSheet1.iter_rows():
+                    endMain += 1
+                if self.DoDataOrNot:
+                    cell_Date = third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 4)
+                    cell_Date.value = "Payments Dates"
+                    cell_Date.fill = darkblueFill
+                    third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A + 2]].width = 18
+                cell_rest_date = third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 3)
+                cell_comission = third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2)
+                cell_status = third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1)
+                cell_paid = third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A)
 
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2).value = "Payment commission"
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).value = "Payment status"
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).value = "Paid amount"
+                cell_rest_date.value = "Payments with Rest"
+                cell_comission.value = "Payment commission"
+                cell_status.value = "Payment status"
+                cell_paid.value = "Paid amount"
 
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 2).fill=darkblueFill
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A + 1).fill=darkblueFill
-                third_sheet.cell(row=1, column=INVOICE_NUMBER_TO_A).fill=darkblueFill
+                cell_rest_date.fill = darkblueFill
+                cell_comission.fill = darkblueFill
+                cell_status.fill = darkblueFill
+                cell_paid.fill = darkblueFill
 
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A + 2]].width=18
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A-1]].width=18
-                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A]].width = 18
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A]].width = 25
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_TO_A +1]].width = 18
 
 
                 # updating a progress scale
-                counter_of_actions+=1
+                counter_of_actions += 1
                 self.updating_scale(label, progress, counter_of_actions, all_actions,
                                     str(counter_of_actions) + '/' + str(all_actions))
+
+                KontoDict = dict()
+                currentKonto = 0
+
+
+
+
+                payments = dict()
+                paymentsStatus = dict()
+                LieferantDict = dict()
+
+
+
+
+
 
 
 
                 # Seven number code
                 for i in fromSheet1.iter_rows():
 
-                    id = "".join(c for c in str(i[KEY_A].value) if c.isdecimal())
-                    row_number = i[KEY_A-1].row
+                    id = re.sub(r'[^0-9]+', r'', str(i[KEY_A].value))
+                    row_number = i[KEY_A - 1].row
 
+                    lieferant= str(i[Lieferant].value)
+
+                    self.updating_scale(label, progress, row_number, endMain, str(row_number) + '/' + str(endMain))
                     if row_number >= start1 and row_number <= end1:
+                        requested_sum = float(
+                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
+                        if requested_sum < 0:
+                            #requested_sum = requested_sum * (-1)
+                            status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+                            status_column.value = 'CREDIT NOTE'
+                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                third_sheet.cell(row=row_number, column=column).fill = yellowFill
+                            continue
+
+                        if lieferant not in LieferantDict.keys():
+                            LieferantDict[lieferant] = []
+                        if id not in payments.keys():
+                            if len(id) == 7:
+                                payments[id] = 0
+                                LieferantDict[lieferant].append(id)
+                                paymentsStatus[id] = ['UNPAID', requested_sum, 0]
+
+
                         for j in fromSheet2.iter_rows():
 
-                            #this line delete all non-digit symbols from the payment number
-                            KEY = "".join(c for c in str(j[KEY_B].value) if c.isdecimal())
+                            KEY = re.sub(r'[^0-9]+', r'', str(j[KEY_B].value))
 
                             if KEY == id:
-                                if str(j[INVOICE_NUMBER_FROM_A].value) !="None":
 
 
-                                    paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
-                                    requested_sum = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
+                                if str(j[INVOICE_NUMBER_CURRENT].value) == "None":
+                                    paid_sum = 0
+                                else:
+                                    paid_sum = float(j[INVOICE_NUMBER_CURRENT].value)
 
-                                    status_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
-                                    paid_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
-                                    #rest_column=third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
+                                if str(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value) == "None":
+                                    break
+
+
+                                if self.DoDataOrNot == True:
+                                    date_paid = str(j[PAYMENT_DATE_COLUMN].value)
+
+                                status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
+                                paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                                rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 3)
+
+                                payments[KEY] += paid_sum
+                                if str(status_column.value) != "PAID":
+                                    if requested_sum == payments[KEY]:
+                                        self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                      greenFill, paid_column, payments[KEY], id, paymentsStatus, KEY)
+
+                                    elif requested_sum > payments[KEY] != 0:
+                                        self.PARTICALLY_SUM(payments[KEY], requested_sum, status_column,
+                                                            INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
+                                                            paid_column, id, paymentsStatus, KEY)
+
+                                    elif payments[KEY] == 0:
+                                        self.NULL_SUM(payments[KEY], requested_sum, status_column, INVOICE_NUMBER_TO_A,
+                                                      third_sheet, row_number, redFill
+                                                      , paid_column, id, paymentsStatus, KEY)
 
 
 
-                                    if requested_sum == paid_sum:
-                                        rest=0
-                                        #rest_column.value = rest
-                                        #rest_column.fill = yellowFill
-
+                                    elif requested_sum < payments[KEY]:
+                                        rest = payments[KEY] - requested_sum
                                         status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = paid_sum
+                                        paymentsStatus[KEY] = ['PAID', requested_sum, payments[KEY]]
+                                        if self.DoDataOrNot == True:
+                                            rest_column.value = date_paid + ',  ' + str(round(rest))
 
-                                        self.Clients.append(Client(id, rest))
-
-                                    elif requested_sum > paid_sum != 0:
-
-                                        rest = paid_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill= yellowFill
-
-                                        status_column.value = "PARTIALLY PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = paid_sum
-                                        self.Clients.append(Client(id))
-
-                                    elif paid_sum == 0:
-
-                                        rest = paid_sum-requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
-                                        status_column.value = "UNPAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = redFill
-                                        paid_column.value = 0
-
-                                        self.Clients.append(Client(id, rest))
+                                        else:
+                                            rest_column.value = str(round(rest))
+                                        rest_column.fill=lightOrangeFill
 
 
-                                    elif requested_sum < paid_sum:
-                                        rest = paid_sum - requested_sum
-                                        status_column.value = "PAID"
+
                                         for column in range(1, INVOICE_NUMBER_TO_A + 3):
                                             third_sheet.cell(row=row_number, column=column).fill = greenFill
                                         paid_column.value = requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = darkgreenFill
+
+
                                         self.Clients.append(Client(id, rest))
 
-                                    else:
-                                        status_column.value = "NOT FOUND"
+                                    # break
+                                    if self.DoDataOrNot == True:
+                                        if float(paid_sum) != 0:
+                                            counter = 0
+                                            while str((third_sheet.cell(row=row_number,
+                                                                        column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                                counter += 1
 
-                                break
+                                            (third_sheet.cell(row=row_number,
+                                                              column=INVOICE_NUMBER_TO_A + 4 + counter)).value = date_paid + ',  ' + str(
+                                                round(paid_sum, 1))
+                                            third_sheet.column_dimensions[
+                                                alphabet[INVOICE_NUMBER_TO_A + 3 + counter]].width = 20
+                                            if self.max < counter:
+                                                self.max = counter
+
+
+
+
+
+
+
+
+
 
                 counter_of_actions += 1
                 self.updating_scale(label, progress, counter_of_actions, all_actions,
@@ -808,15 +985,17 @@ class MainClass:
 
 
 
+
+
+
+
                 # iterate over all values that contain slashes to reduce the value range
-                payments=dict()
+
                 WithSlashes = []
                 for j in fromSheet2.iter_rows():
-                                if len(str(j[KEY_B].value)) > 7 and len(str(j[KEY_B].value)) < 12:
-                                    if '/' in str(j[KEY_B].value):
-                                       WithSlashes.append(j)
-
-
+                    if len(str(j[KEY_B].value)) > 7 and len(str(j[KEY_B].value)) < 12:
+                        if '/' in str(j[KEY_B].value):
+                            WithSlashes.append(j)
 
                 # Numbers of payment
                 for i in fromSheet1.iter_rows():
@@ -824,98 +1003,131 @@ class MainClass:
                     id = "".join(c for c in str(i[KEY_A].value) if c.isdecimal())
                     row_number = i[KEY_A - 1].row
 
+
+
+
                     if row_number >= start1 and row_number <= end1:
+                        requested_sum = float(
+                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
+                        if requested_sum < 0:
+                            #requested_sum*=(-1)
+                            status_column = third_sheet.cell(row=row_number,
+                                                             column=INVOICE_NUMBER_TO_A + 1)
+                            status_column.value = 'CREDIT NOTE'
+                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                third_sheet.cell(row=row_number, column=column).fill = yellowFill
+                            continue
+
+
+
+
 
                         for j in WithSlashes:
                             Key = (str(j[KEY_B].value).split('/'))[0]
                             if Key == id:
-                                if str(j[INVOICE_NUMBER_FROM_A].value) != "None":
 
-                                    # INSERTING DATA TO TABLE DEPENDING ON PAID SUM
-
-                                        if Key not in payments.keys():
-                                            payments[Key] = 0
-
-                                        # selecting values of paid sum and requirement sum
-                                        paid_sum = float(j[INVOICE_NUMBER_FROM_A].value)
-                                        requested_sum = float(
-                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
-
-                                        # Selecting columns for inserting
-                                        status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
-                                        paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
-                                        #rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
-
-
-                                        payments[Key] += paid_sum
-
-                                        if requested_sum == paid_sum:
-                                            rest = 0
-                                            #rest_column.value = rest
-                                            #rest_column.fill = yellowFill
-
-
-                                            status_column.value = "PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = payments[Key]
-                                            self.Clients.append(Client(id))
+                                # INSERTING DATA TO TABLE DEPENDING ON PAID SUM
+                                if id not in payments.keys():
+                                    payments[Key] = 0
+                                    paymentsStatus[Key] = ['UNPAID', requested_sum, 0]
 
 
 
-                                        elif requested_sum > paid_sum != 0:
-                                            rest = float(payments[Key]) - requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill = redFill
+                                if str(j[INVOICE_NUMBER_CURRENT].value) == "None":   # selecting values of paid sum and requirement sum
+                                    paid_sum = 0
+                                else:
+                                    paid_sum = float(j[INVOICE_NUMBER_CURRENT].value)
+                                if str(third_sheet.cell(row=row_number,
+                                                        column=INVOICE_NUMBER_REQUIRED).value) == "None":
+                                    break
 
 
-                                            status_column.value = "PARTIALLY PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = payments[Key]
-                                            self.Clients.append(Client(id))
 
-
-                                        elif paid_sum == 0:
-                                            rest = float(payments[Key]) - requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill = redFill
-
-
-                                            status_column.value = "UNPAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = redFill
-                                            paid_column.value = 0
-                                            self.Clients.append(Client(id))
-
-
-                                        elif requested_sum < paid_sum:
-
-                                            rest = float(payments[Key]) - requested_sum
-                                            status_column.value = "PAID"
-                                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                                third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                            paid_column.value = requested_sum
-                                            #rest_column.value = rest
-                                            #rest_column.fill=darkgreenFill
-                                            self.Clients.append(Client(id, rest))
-
-                #End of the cycle
+                                if self.DoDataOrNot == True:
+                                    date_paid = str(j[PAYMENT_DATE_COLUMN].value)
+                                status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)  # Selecting columns for inserting
+                                paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                                rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 3)
 
 
 
 
+                                payments[Key] += paid_sum
+
+                                if str(status_column.value) != "PAID":
+                                    if requested_sum == payments[Key]:
+                                        self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                      greenFill, paid_column, payments[Key], id, paymentsStatus, Key)
 
 
-                #updating a progress scale
+                                    elif requested_sum > payments[Key] != 0:
+                                        self.PARTICALLY_SUM(float(payments[Key]), requested_sum, status_column,
+                                                            INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
+                                                            paid_column, id, paymentsStatus, Key)
+
+
+
+                                    elif payments[Key] == 0:
+                                        self.NULL_SUM(paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A,
+                                                      third_sheet, row_number, redFill
+                                                      , paid_column, id, paymentsStatus, Key)
+
+
+                                    elif requested_sum < payments[Key]:
+
+                                        rest = float(payments[Key]) - requested_sum
+                                        status_column.value = "PAID"
+                                        paymentsStatus[Key] = ['PAID', requested_sum, payments[Key]]
+
+                                        if self.DoDataOrNot == True:
+                                            rest_column.value = date_paid + ',  ' + str(round(rest))
+
+                                        else:
+                                            rest_column.value = str(round(rest))
+                                        rest_column.fill = lightOrangeFill
+
+
+                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
+                                        paid_column.value = requested_sum
+
+
+                                        self.Clients.append(Client(id, rest))
+
+                                    if self.DoDataOrNot == True:
+                                        if float(paid_sum) != 0:
+                                            counter = 0
+                                            while str((third_sheet.cell(row=row_number,
+                                                                        column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                                counter += 1
+                                            (third_sheet.cell(row=row_number,
+                                                              column=INVOICE_NUMBER_TO_A + 4 + counter)).value = date_paid + ',  ' + str(
+                                                round(paid_sum, 1))
+                                            third_sheet.column_dimensions[
+                                                alphabet[INVOICE_NUMBER_TO_A + 3 + counter]].width = 20
+                                            if self.max < counter:
+                                                self.max = counter
+                # End of the cycle
+
+
+
+
+
+
+                            # updating a progress scale
                 counter_of_actions += 1
                 self.updating_scale(label, progress, counter_of_actions, all_actions,
-                                    str(counter_of_actions) + '/' + str(all_actions))
+                                                str(counter_of_actions) + '/' + str(all_actions))
 
 
 
-                # iterate over all values that contain more than one number to reduce the value range
-                A_Lot_Of_Numbers=[]
+
+
+
+
+
+                            # iterate over all values that contain more than one number to reduce the value range
+                A_Lot_Of_Numbers = []
                 for j in fromSheet2.iter_rows():
                     if len(str(j[KEY_B].value)) > 14:
                         if '/' in str(j[KEY_B].value):
@@ -923,216 +1135,390 @@ class MainClass:
 
 
 
-                # A lot of payment numbers
+                            # A lot of payment numbers
                 for j in A_Lot_Of_Numbers:
                     keys = str(j[KEY_B].value).split('/')
-                    if str(j[INVOICE_NUMBER_FROM_A].value) == "None":
+
+                    if str(j[INVOICE_NUMBER_CURRENT].value) == "None":
                         continue
                     else:
-                        all_sum = float(j[INVOICE_NUMBER_FROM_A].value)
+                        all_sum = float(j[INVOICE_NUMBER_CURRENT].value)
 
                     # this line should be only in this algorithm, font copy this, this is a counter for numbers array
                     NUMBER_OF_CHECK = 0
 
+
+
+
+
+
                     for Key in keys:
 
+                                    for i in fromSheet1.iter_rows():
+                                        id = "".join(c for c in str(i[KEY_A].value) if c.isdecimal())
+                                        row_number = i[KEY_A - 1].row
 
-                        for i in fromSheet1.iter_rows():
-                            id = "".join(c for c in str(i[KEY_A].value) if c.isdecimal())
-                            row_number = i[KEY_A - 1].row
-
-                            #if row_number >= start1 and row_number <= end1:
-
-                            if Key == id:
-
-                                # INSERTING DATA TO TABLE DEPENDING ON PAID SUM
-
-                                # this line should be only in this algorithm, font copy this, this is a counter for numbers array
-                                NUMBER_OF_CHECK+=1
-
-                                # selecting values of paid sum and requirement sum
-                                requested_sum = float(
-                                    third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B).value)
-                                if Key not in payments.keys():
-                                    payments[Key] = 0
-                                third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value=''
+                                        # if row_number >= start1 and row_number <= end1:
 
 
-                                # Selecting columns for inserting
+
+                                        if Key == id:
+
+                                            NUMBER_OF_CHECK += 1     # this line should be only in this algorithm, font copy this, this is a counter for numbers array
+
+                                            requested_sum = float(
+                                                third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
+                                            if requested_sum < 0:
+                                                #requested_sum*=(-1)
+                                                status_column = third_sheet.cell(row=row_number,
+                                                                                 column=INVOICE_NUMBER_TO_A + 1)
+                                                status_column.value = 'CREDIT NOTE'
+                                                for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                                    third_sheet.cell(row=row_number, column=column).fill = yellowFill
+                                                break
+
+                                            # selecting values of paid sum and requirement sum
+                                            if id not in payments.keys():
+                                                payments[Key] = 0
+                                                paymentsStatus[Key] = ['UNPAID', requested_sum, 0]
+
+
+                                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2).value = ''
+
+                                            if self.DoDataOrNot == True:
+                                                date_paid = str(j[PAYMENT_DATE_COLUMN].value)
+
+
+                                            status_column = third_sheet.cell(row=row_number,                     # Selecting columns for inserting
+                                                                             column=INVOICE_NUMBER_TO_A + 1)
+                                            paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
+                                            rest_column = third_sheet.cell(row=row_number,
+                                                                           column=INVOICE_NUMBER_TO_A + 3)
+
+
+
+                                            paid_sum = all_sum
+                                            all_sum += payments[Key]
+
+                                            if str(status_column.value) != "PAID":
+
+                                                if requested_sum == all_sum:
+                                                    self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet,
+                                                                  row_number,
+                                                                  greenFill, paid_column, all_sum, id, paymentsStatus, Key)
+
+                                                    if self.DoDataOrNot == True:
+                                                        counter = 0
+                                                        while str((third_sheet.cell(row=row_number,
+                                                                                    column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                                            counter += 1
+                                                        (third_sheet.cell(row=row_number,
+                                                                          column=INVOICE_NUMBER_TO_A + 4 + counter)).value = date_paid + ',  ' + str(
+                                                            round(paid_sum, 1))
+
+                                                        third_sheet.column_dimensions[
+                                                            alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
+                                                        if self.max < counter:
+                                                            self.max = counter
+                                                    all_sum = 0
+
+                                                elif requested_sum > all_sum != 0:
+                                                    self.PARTICALLY_SUM(all_sum, requested_sum, status_column,
+                                                                        INVOICE_NUMBER_TO_A, third_sheet, row_number,
+                                                                        greenFill,
+                                                                        paid_column, id, paymentsStatus, Key)
+
+                                                    if self.DoDataOrNot == True:
+                                                        counter = 0
+                                                        while str((third_sheet.cell(row=row_number,
+                                                                                    column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                                            counter += 1
+                                                        (third_sheet.cell(row=row_number,
+                                                                          column=INVOICE_NUMBER_TO_A + 4 + counter)).value = date_paid + ',  ' + str(
+                                                            round(paid_sum, 1))
+                                                        third_sheet.column_dimensions[
+                                                            alphabet[INVOICE_NUMBER_TO_A + 2 + counter]].width = 20
+                                                        if self.max < counter:
+                                                            self.max = counter
+
+
+                                                elif all_sum == 0:
+                                                    self.NULL_SUM(all_sum, requested_sum, status_column,
+                                                                  INVOICE_NUMBER_TO_A,
+                                                                  third_sheet, row_number, redFill
+                                                                  , paid_column, id, paymentsStatus, Key)
+
+
+                                                elif requested_sum < all_sum:
+                                                    if NUMBER_OF_CHECK != len(keys):
+
+                                                        all_sum -= requested_sum
+                                                        self.Clients.append(Client(id))
+                                                        paymentsStatus[Key] = ['PAID', requested_sum, requested_sum]
+                                                        rest = 0
+
+
+                                                    else:
+                                                        rest = (all_sum - requested_sum)
+                                                        paymentsStatus[Key] = ['PAID', requested_sum, all_sum]
+
+                                                        if self.DoDataOrNot == True:
+                                                            rest_column.value = date_paid + ',  ' + str(round(rest))
+
+                                                        else:
+                                                            rest_column.value = str(round(rest))
+                                                        rest_column.fill=lightOrangeFill
+
+                                                    self.Clients.append(Client(id, rest))
+                                                    status_column.value = "PAID"
+
+                                                    for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                                        third_sheet.cell(row=row_number, column=column).fill = greenFill
+                                                    paid_column.value = requested_sum
+                                                    if self.DoDataOrNot == True:
+
+                                                        counter = 0
+                                                        while str((third_sheet.cell(row=row_number,
+                                                                                    column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                                            counter += 1
+                                                        (third_sheet.cell(row=row_number,
+                                                                          column=INVOICE_NUMBER_TO_A + 4 + counter)).value = date_paid + ',  ' + str(
+                                                            requested_sum)
+                                                        third_sheet.column_dimensions[
+                                                            alphabet[INVOICE_NUMBER_TO_A + 3 + counter]].width = 20
+                                                        if self.max < counter:
+                                                            self.max = counter
+
+
+
+
+
+
+                for i in fromSheet2.iter_rows():
+                    invoiceNumber = []
+                    KontoNumber = re.sub(r'[^0-9]+', r'', str(i[Konto].value))
+
+                    val = "".join(c for c in str(i[INVOICE_NUMBER_REQUIRED].value) if c.isdecimal() or c == '.')
+                    KEY = re.sub(r'[^0-9]+', r'', str(i[KEY_B].value))
+
+
+                    if len(KEY) == 7 or KEY=='0':
+                        invoiceNumber.append(KEY)
+
+                    elif len(KEY)>7 and len(KEY)<12:
+                        invoiceNumber.append(KEY[0:7])
+
+                    elif len(KEY)>12:
+                        invoiceNumber=[]
+                        k = 0
+                        max = 7
+                        for j in range(1, len(KEY)//7 +1):
+                            max = 7*j
+                            invoiceNumber.append(KEY[k:max])
+                            k = max
+
+
+                    if val == str(i[INVOICE_NUMBER_REQUIRED].value):
+                        val = float(val)
+                    elif val == '':
+                        val=0
+
+                    if KontoNumber not in KontoDict.keys():
+                                if KontoNumber != '0' and KontoNumber != '':
+                                    KontoDict[KontoNumber] = [0, []]
+                                    currentKonto=KontoNumber
+
+
+                    if currentKonto != 0 or KontoNumber in KontoDict.keys():
+                        AddOrNot = False
+                        for lief in LieferantDict.keys():
+                            for numbers in invoiceNumber:
+                            #if numbers in
+                                if numbers in LieferantDict[lief] or numbers == '0':
+                                    AddOrNot = True
+                                    if numbers not in KontoDict[currentKonto][1]:
+                                        KontoDict[currentKonto][1].append(numbers)
+                        if AddOrNot:
+                            KontoDict[currentKonto][0] += val
+
+                    print(KontoNumber)
+
+                #keys = KontoDict.keys()
+                for key in list(KontoDict.keys()):
+                    if len(KontoDict[key][1]) == 0:
+                        KontoDict.pop(key)
+
+
+
+
+
+
+
+
+                LiefAndKonto=dict()
+                for key in KontoDict.keys():
+                    for lief in LieferantDict.keys():
+                        for invoices in KontoDict[key][1]:
+                            if invoices in LieferantDict[lief]:
+                                LiefAndKonto[key] = lief
+
+                for key in KontoDict.keys():
+                    if KontoDict[key][0]>0:
+                        for invoices in KontoDict[key][1]:
+                            if invoices in paymentsStatus.keys():
+                                if paymentsStatus[invoices][0] == 'PAID':
+                                    KontoDict[key][0] -= paymentsStatus[invoices][1]
+                                elif paymentsStatus[invoices][0] == 'PARTIALLY PAID':
+                                    KontoDict[key][0] -= paymentsStatus[invoices][2]
+
+                for key in KontoDict.keys():
+                    if KontoDict[key][0] > 0 and key in LiefAndKonto.keys():
+                        for invoices in LieferantDict[LiefAndKonto[key]]:
+
+                            if invoices in paymentsStatus.keys():
+                                if paymentsStatus[invoices][0] == 'UNPAID':
+                                    if paymentsStatus[invoices][1] <= KontoDict[key][0]:
+                                        paymentsStatus[invoices][0] = 'PAID_'
+                                        paymentsStatus[invoices][2] = paymentsStatus[invoices][1]
+                                        paymentsStatus[invoices].append(paymentsStatus[invoices][1])
+                                        KontoDict[key][0] -= paymentsStatus[invoices][1]
+                                    elif paymentsStatus[invoices][1] > KontoDict[key][0] != 0:
+                                        paymentsStatus[invoices][0] = 'PARTIALLY PAID_'
+                                        paymentsStatus[invoices][2] = KontoDict[key][0]
+                                        paymentsStatus[invoices].append(KontoDict[key][0])
+                                        KontoDict[key][0] = 0
+                                    else:
+                                        KontoDict[key][0] = 0
+                                elif paymentsStatus[invoices][0] == 'PARTIALLY PAID':
+                                    rest = paymentsStatus[invoices][1]-paymentsStatus[invoices][2]
+                                    if rest <= KontoDict[key][0]:
+                                        paymentsStatus[invoices][0] = 'PAID_'
+                                        paymentsStatus[invoices][2] = paymentsStatus[invoices][1]
+                                        paymentsStatus[invoices].append(rest)
+                                        KontoDict[key][0] -= rest
+
+
+                for k in fromSheet1.iter_rows():
+                    id = re.sub(r'[^0-9]+', r'', str(k[KEY_A].value))
+                    row_number = k[KEY_A - 1].row
+                    if row_number >= start1 and row_number <= end1:
+                        if id in paymentsStatus.keys():
+                            if paymentsStatus[id][0][-1]=='_':
                                 status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
-                                paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
-                                #rest_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
+                                paid_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A )
+                                status_column.value = paymentsStatus[id][0].replace('_', "(From Rest)")
+                                paid_column.value = paymentsStatus[id][2]
+                                for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                    third_sheet.cell(row=row_number, column=column).fill = greenFill
+                                third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1).fill = lightGreenFill
+                                if self.DoDataOrNot == True:
+                                    counter = 0
+                                    while str((third_sheet.cell(row=row_number,
+                                                                column=INVOICE_NUMBER_TO_A + 4 + counter)).value) != "None":
+                                        counter += 1
+                                    (third_sheet.cell(row=row_number,
+                                                      column=INVOICE_NUMBER_TO_A + 4 + counter)).value = str(round(paymentsStatus[id][3])) + '(from rest)'
+                                    third_sheet.column_dimensions[
+                                        alphabet[INVOICE_NUMBER_TO_A + 3 + counter]].width = 25
+                                    if self.max < counter:
+                                        self.max = counter
 
 
-                                all_sum+=payments[Key]
-                                if str(paid_column.value)!="Paid":
-                                    if requested_sum == all_sum:
-                                        rest = 0
-                                        #rest_column.value = rest
-                                        #rest_column.fill = yellowFill
-
-
-                                        status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = all_sum
-                                        all_sum=0
-                                        self.Clients.append(Client(id))
-
-                                    elif requested_sum > all_sum != 0:
-                                        rest = all_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
-
-                                        status_column.value = "PARTIALLY PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = greenFill
-                                        paid_column.value = all_sum
-                                        all_sum=0
-                                        self.Clients.append(Client(id))
-
-                                    elif all_sum == 0:
-                                        rest = all_sum - requested_sum
-                                        #rest_column.value = rest
-                                        #rest_column.fill = redFill
-
-                                        status_column.value = "UNPAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A + 3):
-                                            third_sheet.cell(row=row_number, column=column).fill = redFill
-                                        paid_column.value = 0
-                                        self.Clients.append(Client(id))
-
-
-                                    elif requested_sum < all_sum:
-                                        if NUMBER_OF_CHECK!=len(keys):
-                                            all_sum-=requested_sum
-                                            self.Clients.append(Client(id))
-                                            rest=0
-                                            #rest_column.value = rest
-                                            #rest_column.fill = yellowFill
-
-                                        else:
-                                            rest = (all_sum - requested_sum)
-                                            #rest_column.value = rest
-                                            #rest_column.fill = darkgreenFill
-
-                                            self.Clients.append(Client(id, rest))
-                                        status_column.value = "PAID"
-                                        for column in range(1, INVOICE_NUMBER_TO_A+3):
-                                            third_sheet.cell(row=row_number,column=column).fill=greenFill
-                                        #status_column.fill = greenFill
-                                        paid_column.value = requested_sum
 
 
 
                 # updating a progress scale
                 counter_of_actions += 1
-                self.updating_scale(label, progress, counter_of_actions, all_actions, "Please wait, changes are being applied to the file")
+                self.updating_scale(label, progress, counter_of_actions, all_actions,
+                                    "Please wait, changes are being applied to the file")
 
-
-                All_requested=0
-                All_payed=0
-                Payments_left=0
-                Payments_rest=0
-                last_row=0
-                All_comission=0
-
-                Receiver_percentage=0
-
+                All_requested = 0
+                All_payed = 0
+                Payments_rest = 0
+                last_row = 0
+                All_comission = 0
 
                 for i in fromSheet1.iter_rows():
+                    isMinus = False
+                    minusValue=0
                     row_number = i[KEY_A - 1].row
-                    if row_number >= start1 and row_number <= end1 :
-                        CELL_REQUESTED = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_FROM_B)
+                    if row_number >= start1 and row_number <= end1:
+                        CELL_REQUESTED = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED)
                         CELL_PAID = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A)
-                        CELL_COMISSION = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2)
-                        CELL_COMISSION_PERCENT= third_sheet.cell(row=row_number, column=COMISSION_COLUMN)
-
+                        CELL_COMISSION = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 2)
+                        CELL_COMISSION_PERCENT = third_sheet.cell(row=row_number, column=COMISSION_COLUMN)
 
                         if str(CELL_REQUESTED.value) != 'None':
-                            val = "".join( c for c in str(CELL_REQUESTED.value) if c.isdecimal() or c == '.')
+                            val = "".join(c for c in str(CELL_REQUESTED.value) if c.isdecimal() or c == '.')
                             print(val)
 
                             if val == str(CELL_REQUESTED.value):
                                 All_requested += float(val)
+                            elif '-'+val == str(CELL_REQUESTED.value):
+                                isMinus=True
+                                minusValue = float(val)
+                                All_requested += float('-'+val)
+                                All_payed-=float(val)
+                                val = "".join(
+                                    c for c in str(CELL_COMISSION_PERCENT.value) if c.isdecimal() or c == '.')
+                                if val == str(CELL_COMISSION_PERCENT.value):
+                                    value = 0
+                                    if float(val) >= 1:
+                                        value = round(float(minusValue) * float(val) * 0.01, 1)
+                                    elif float(val) <= 1:
+                                        value = round(float(minusValue) * float(val), 1)
+                                    All_comission-=float(value)
+                                self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
+                                                    "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
                             else:
-                                self.errors.append([alphabet[INVOICE_NUMBER_FROM_B-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
-
-
-
-
-
-
-                        #if str(CELL_REST.value) != 'None':
-                        #    rest_sum="".join(c for c in str(CELL_REST.value) if c.isdecimal() or c=='.' or c=='-')
-                        #    if rest_sum == str(CELL_REST.value):
-                        #        if float(rest_sum) < 0:
-                        #            left_sum_minus = float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                        #            Payments_left += left_sum_minus
-                        #        else:
-                       #             left_sum_plus=float(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A+2).value)
-                        #            Payments_rest+=left_sum_plus
-                       #     else:
-                       #         self.errors.append([alphabet[INVOICE_NUMBER_TO_A+1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+                                self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
+                                                    "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
                         if str(CELL_PAID.value) != 'None':
-                            payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c=='.')
+                            payed_sum = "".join(c for c in str(CELL_PAID.value) if c.isdecimal() or c == '.')
                             if payed_sum == str(CELL_PAID.value):
                                 All_payed += float(payed_sum)
                                 if str(CELL_COMISSION_PERCENT.value) != 'None':
                                     val = "".join(
                                         c for c in str(CELL_COMISSION_PERCENT.value) if c.isdecimal() or c == '.')
                                     if val == str(CELL_COMISSION_PERCENT.value):
-                                        CELL_COMISSION.value =round(float(payed_sum) * float(val) * 0.01,1)
-                                        All_comission+=float(CELL_COMISSION.value)
+
+                                            if float(val) >= 1:
+                                                CELL_COMISSION.value = round(float(payed_sum) * float(val) * 0.01, 1)
+                                            elif float(val) <= 1:
+                                                CELL_COMISSION.value = round(float(payed_sum) * float(val), 1)
+                                            All_comission += float(CELL_COMISSION.value)
+
+
+
                                     else:
-                                        self.errors.append([alphabet[COMISSION_COLUMN], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+                                        self.errors.append([alphabet[COMISSION_COLUMN], row_number,
+                                                            "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
 
                             else:
-                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A-1], row_number, "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
+                                self.errors.append([alphabet[INVOICE_NUMBER_TO_A - 1], row_number,
+                                                    "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
 
+                    last_row = row_number
 
-                    last_row=row_number
-
-
-
-
-                last_row+=1
-                SUMME_CELL=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_FROM_B)
+                last_row += 1
+                SUMME_CELL = third_sheet.cell(row=last_row, column=INVOICE_NUMBER_REQUIRED)
                 SUMME_CELL.value = str(round(All_requested, 1))
                 SUMME_CELL.fill = yellowFill
 
-                SUMME_CELL_PAID=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A)
-                SUMME_CELL_PAID.value=str(round(All_payed + Payments_rest, 1))
-                SUMME_CELL_PAID.fill=darkgreenFill
+                SUMME_CELL_PAID = third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A)
+                SUMME_CELL_PAID.value = str(round(All_payed + Payments_rest, 1))
+                SUMME_CELL_PAID.fill = darkgreenFill
 
-                SUMME_CELL_COMISSION= third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A+2)
-                SUMME_CELL_COMISSION.value=round(All_comission,1)
-                SUMME_CELL_COMISSION.fill=darkgreenFill
+                SUMME_CELL_COMISSION = third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A + 2)
+                SUMME_CELL_COMISSION.value = round(All_comission, 1)
+                SUMME_CELL_COMISSION.fill = darkgreenFill
 
-
-                #SUMME_LEFT=third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A+2)
-                #SUMME_LEFT.value=round(Payments_left)
-                #SUMME_LEFT.fill=redFill
-
-                #SUMME_REST=third_sheet.cell(row=last_row+1, column=INVOICE_NUMBER_TO_A+2)
-                #SUMME_REST.value=round(Payments_rest)
-                #SUMME_REST.fill=darkgreenFill
-
-                #TEXT_PERCENTAGE = third_sheet.cell(row=last_row + 2, column=INVOICE_NUMBER_TO_A-1)
-                #TEXT_PERCENTAGE.value='Percentage of payments receiver'
-                #TEXT_PERCENTAGE.fill=darkgreenFill
-
-                #SUMME_PERCENTAGE = third_sheet.cell(row=last_row+2, column=INVOICE_NUMBER_TO_A)
-                #SUMME_PERCENTAGE.value = float(SUMME_CELL_PAID.value) * 0.01 * self.percent
-                #SUMME_PERCENTAGE.fill = greenFill
-
-                ERROR_CELL=error_sheet.cell(row=2, column=3)
-                ROW_CELL=error_sheet.cell(row=2, column=2)
-                COLUMN_CELL=error_sheet.cell(row=2, column=1)
-                TEXT_CELL=error_sheet.cell(row=1, column=1)
+                ERROR_CELL = error_sheet.cell(row=2, column=3)
+                ROW_CELL = error_sheet.cell(row=2, column=2)
+                COLUMN_CELL = error_sheet.cell(row=2, column=1)
+                TEXT_CELL = error_sheet.cell(row=1, column=1)
 
                 TEXT_CELL.value = 'ERRORS WHILE PARSING NEXT CELLS'
                 TEXT_CELL.font = ('Calibri', 30)
@@ -1142,21 +1528,38 @@ class MainClass:
                 COLUMN_CELL.font = ('Calibri', 25)
                 COLUMN_CELL.fill = yellowFill
                 ROW_CELL.value = 'Row'
-                ROW_CELL.font=('Calibri', 25)
-                ROW_CELL.fill= yellowFill
+                ROW_CELL.font = ('Calibri', 25)
+                ROW_CELL.fill = yellowFill
                 ERROR_CELL.value = 'Error'
-                ERROR_CELL.font=('Calibri', 25)
+                ERROR_CELL.font = ('Calibri', 25)
                 ERROR_CELL.fill = yellowFill
 
+                third_sheet.merge_cells(start_row=1, start_column=INVOICE_NUMBER_TO_A + 4, end_row=1,
+                                        end_column=INVOICE_NUMBER_TO_A + 5 + self.max - 1)
+
                 error_sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=3)
-                error_sheet.column_dimensions[alphabet[2]].width=72
+                error_sheet.column_dimensions[alphabet[2]].width = 72
                 for ERRORS in range(len(self.errors)):
                     for values in range(len(self.errors[ERRORS])):
-                        error_sheet.cell(row=ERRORS+3, column=values+1).value=self.errors[ERRORS][values]
+                        error_sheet.cell(row=ERRORS + 3, column=values + 1).value = self.errors[ERRORS][values]
 
 
+                for i in fromSheet1.iter_rows():
+                    row_number = i[KEY_A - 1].row
 
-                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_FROM_B-1]].width=7
+                    if row_number >= start1 and row_number <= end1:
+                        requested_sum = float(
+                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
+                        if requested_sum < 0:
+                            status_column = third_sheet.cell(row=row_number,
+                                                             column=INVOICE_NUMBER_TO_A + 1)
+                            status_column.value = 'CREDIT NOTE'
+                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                third_sheet.cell(row=row_number, column=column).fill = yellowFill
+                            continue
+
+
+                third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_REQUIRED-1]].width=7
 
                 #Saving a file
                 thirdTable.save(path)
@@ -1182,48 +1585,50 @@ class MainClass:
         progress.update()
 
 
-    def valueChangedColumnFromA(self,event):
-        self.invoiceDataFrom=event
-        print(self.invoiceDataFrom)
 
-    def valueChangedColumnFromB(self, event):
-        self.invoiceDataFromB = event
-        print(self.invoiceDataFromB)
+    def valueChangedColumnFromA(self,event, data):
+        data["RequiredPayCol"]=event
+        self.invoiceDataRequired=event
+        print(self.invoiceDataCurrent)
+
+    def valueChangedColumnFromB(self, event, data):
+        data["CurrentPayCol"] = event
+        self.invoiceDataCurrent = event
+        print(self.invoiceDataCurrent)
 
 
-    def valueChangedColumnToA(self, event):
-        self.invoiceDataTo=event
-        print(self.invoiceDataTo)
+    def valueChangedColumnToA(self, event, data):
+        self.invoiceDataLoad=event
+        data["PayColNew"]=event
+        print(self.invoiceDataLoad)
 
     def sheetChangedOne(self, event):
         self.sheetFirst = event
-
 
     def sheetChangedTwo(self, event):
         self.sheetSecond = event
 
 
-    def confirmEntryPercent(self, UserPercent):
-        try:
-            self.percent = float(UserPercent.get())
-            print(self.percent)
-            UserPercent.configure(text_color="green")
-            UserPercent.configure(placeholder_text="Input percent value")
 
-        except:
-            UserPercent.configure(text_color="red")
-            UserPercent.configure(placeholder_text="Value must be a num!")
+    # CHANGING COMBOBOX WITH COMISSION VALUE
+    def valueChangedComission(self, event, data):
+        self.comissionColumn = event
+        data["ComissionCol"]= event
+        print(self.comissionColumn)
 
 
-    def valueChangedRowF2(self, event, isKey, table):
-        if isKey=="Key":
+
+    def valueChangedRowF2(self, event, isKey, table, data):
+        if isKey == "Key":
             if table == "A":
                 self.colKeyA = event
+                data["KeyA"] = event
                 print(self.colKeyA)
             else:
                 self.colKeyB = event
+                data["KeyB"] = event
                 print(self.colKeyB)
-        elif isKey=="Row":
+        elif isKey == "Row":
             if table == "A":
                 self.startA=int(event)
                 print(self.startA)
@@ -1239,6 +1644,8 @@ class MainClass:
                 print(self.colB)
 
 
+
+    # CONFIRMING END ROW
     def confirmEntryF2(self, endRow, Is):
         try:
             if Is=='A':
@@ -1254,6 +1661,9 @@ class MainClass:
             endRow.configure(text_color="red")
             endRow.configure(placeholder_text="Value must be a num!")
 
+
+
+    #FUNCTION THAT OPENS A DIRECTORY TO CHOOSE EXCEL FILES
     def openFileFun2(self, comboboxFirst, label, num):
         tempdir = filedialog.askopenfilename(initialdir="/", title="Select An Excel File", filetypes=(
             ("excel files", "*.xlsx"),("old excel files", "*.xls"), ("All files", "*.*")))
@@ -1282,6 +1692,43 @@ class MainClass:
         label.update()
 
 
+        # FUNCTION THAT OPENS A DIRECTORY TO CHOOSE FOLDER
+    def openFolder(self, label):
+            tempdir = filedialog.askdirectory(initialdir="/", title="Select An Image Folder")
+            if len(tempdir) > 0:
+                self.export_folder = str(tempdir) + "/"
+                label.configure(text="Folder path: " + tempdir, text_color='green')
+                label.update()
+                print(self.export_folder)
+
+
+    def restart(self):
+            os.execl(sys.executable, sys.executable, *sys.argv)
+    def ChangedDateColumn(self,event, data):
+        self.DataColumn = event
+        data["DateCol"] = event
+        print(self.DataColumn)
+
+    def changeKontoColumn(self, event, data):
+        self.Konto = event
+        data["KontoCol"] = event
+        print(self.Konto)
+
+    def changeLieferantColumn(self, event, data):
+        self.Lieferant = event
+        data["Lieferant"] = event
+        print(self.Lieferant)
+
+    def changeDate(self,check):
+        if check.get()=='on':
+            self.DoDataOrNot=True
+        else:
+            self.DoDataOrNot=False
+        print(self.DoDataOrNot)
+
+
+
+
 
 
 class Client:
@@ -1290,7 +1737,9 @@ class Client:
         self.Account_Number = Account_Number
         self.Accountant_Account_Number = Accountant_Account_Number
 
-
+class ClientBank:
+    def __init__(self ):
+        self.Lieferant=0
 
 
 m = MainClass()
