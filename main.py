@@ -877,6 +877,7 @@ class MainClass:
                         requested_sum = float(
                             third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
                         if requested_sum < 0:
+                            #requested_sum = requested_sum * (-1)
                             status_column = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_TO_A + 1)
                             status_column.value = 'CREDIT NOTE'
                             for column in range(1, INVOICE_NUMBER_TO_A + 3):
@@ -1009,6 +1010,7 @@ class MainClass:
                         requested_sum = float(
                             third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
                         if requested_sum < 0:
+                            #requested_sum*=(-1)
                             status_column = third_sheet.cell(row=row_number,
                                                              column=INVOICE_NUMBER_TO_A + 1)
                             status_column.value = 'CREDIT NOTE'
@@ -1167,6 +1169,7 @@ class MainClass:
                                             requested_sum = float(
                                                 third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
                                             if requested_sum < 0:
+                                                #requested_sum*=(-1)
                                                 status_column = third_sheet.cell(row=row_number,
                                                                                  column=INVOICE_NUMBER_TO_A + 1)
                                                 status_column.value = 'CREDIT NOTE'
@@ -1436,6 +1439,8 @@ class MainClass:
                 All_comission = 0
 
                 for i in fromSheet1.iter_rows():
+                    isMinus = False
+                    minusValue=0
                     row_number = i[KEY_A - 1].row
                     if row_number >= start1 and row_number <= end1:
                         CELL_REQUESTED = third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED)
@@ -1449,6 +1454,22 @@ class MainClass:
 
                             if val == str(CELL_REQUESTED.value):
                                 All_requested += float(val)
+                            elif '-'+val == str(CELL_REQUESTED.value):
+                                isMinus=True
+                                minusValue = float(val)
+                                All_requested += float('-'+val)
+                                All_payed-=float(val)
+                                val = "".join(
+                                    c for c in str(CELL_COMISSION_PERCENT.value) if c.isdecimal() or c == '.')
+                                if val == str(CELL_COMISSION_PERCENT.value):
+                                    value = 0
+                                    if float(val) >= 1:
+                                        value = round(float(minusValue) * float(val) * 0.01, 1)
+                                    elif float(val) <= 1:
+                                        value = round(float(minusValue) * float(val), 1)
+                                    All_comission-=float(value)
+                                self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
+                                                    "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
                             else:
                                 self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
                                                     "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
@@ -1461,11 +1482,15 @@ class MainClass:
                                     val = "".join(
                                         c for c in str(CELL_COMISSION_PERCENT.value) if c.isdecimal() or c == '.')
                                     if val == str(CELL_COMISSION_PERCENT.value):
-                                        if float(val) >= 1:
-                                            CELL_COMISSION.value = round(float(payed_sum) * float(val) * 0.01, 1)
-                                        elif float(val) <= 1:
-                                            CELL_COMISSION.value = round(float(payed_sum) * float(val), 1)
-                                        All_comission += float(CELL_COMISSION.value)
+
+                                            if float(val) >= 1:
+                                                CELL_COMISSION.value = round(float(payed_sum) * float(val) * 0.01, 1)
+                                            elif float(val) <= 1:
+                                                CELL_COMISSION.value = round(float(payed_sum) * float(val), 1)
+                                            All_comission += float(CELL_COMISSION.value)
+
+
+
                                     else:
                                         self.errors.append([alphabet[COMISSION_COLUMN], row_number,
                                                             "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
@@ -1519,7 +1544,19 @@ class MainClass:
                         error_sheet.cell(row=ERRORS + 3, column=values + 1).value = self.errors[ERRORS][values]
 
 
+                for i in fromSheet1.iter_rows():
+                    row_number = i[KEY_A - 1].row
 
+                    if row_number >= start1 and row_number <= end1:
+                        requested_sum = float(
+                            third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
+                        if requested_sum < 0:
+                            status_column = third_sheet.cell(row=row_number,
+                                                             column=INVOICE_NUMBER_TO_A + 1)
+                            status_column.value = 'CREDIT NOTE'
+                            for column in range(1, INVOICE_NUMBER_TO_A + 3):
+                                third_sheet.cell(row=row_number, column=column).fill = yellowFill
+                            continue
 
 
                 third_sheet.column_dimensions[alphabet[INVOICE_NUMBER_REQUIRED-1]].width=7
