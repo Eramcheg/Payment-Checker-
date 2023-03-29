@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import sys
 from tkinter import filedialog
@@ -33,7 +33,7 @@ class MainClass:
         self.sheetFirst = None
         self.sheetSecond = None
         self.firstfileF2 = ''
-        self.secondfileF2 = ''
+        self.secondfileF2 = 'G:\\FIles\\Materials_bug_payments_app\\datev 2023.xlsx'
 
         self.colKeyA = data['KeyA']
         self.colKeyB = data['KeyB']
@@ -59,10 +59,12 @@ class MainClass:
 
         self.DescriptionColumn = data["Description"]
 
-        self.export_folder = None
+        self.export_folder = 'G:\\FIles\\Materials_bug_payments_app\\'
         self.max = 0
-        self.year = "2023"
-        self.month = "02"
+        self.year1 =  str(int(datetime.now().year ))
+        self.month1 = int(datetime.now().month)
+        self.year2 = str(int(datetime.now().year ))
+        self.month2 = (datetime.now().month)
 
     def startApp(self):
         root = ct.CTk()
@@ -393,17 +395,33 @@ class MainClass:
         buttonOpenFolder.grid(row=1, column=2, rowspan=2, padx=(10, 0), pady=(7, 0))
 
         # comboboxDate = ct.CTkComboBox(mainFrame, values = )
-        comboboxYear = ct.CTkComboBox(mainFrame, values=years, command=self.YearChange)
-        comboboxYear.grid(row=0, column=3, pady=(15, 0))
-        comboboxYear.set(str(datetime.now().year))
-        comboboxMonth = ct.CTkComboBox(mainFrame, values=months, command=self.MonthChange)
-        comboboxMonth.grid(row=2, column=3, pady=0)
-        comboboxMonth.set('0' + str(datetime.now().month))
+        comboboxYear1 = ct.CTkComboBox(mainFrame, values=years, command=self.YearChange1)
+        comboboxYear1.grid(row=0, column=3, pady=(15, 0))
+        comboboxYear1.set(str(datetime.now().year))
+        comboboxMonth1 = ct.CTkComboBox(mainFrame, values=months, command=self.MonthChange1)
+        comboboxMonth1.grid(row=2, column=3, pady=0)
+        comboboxMonth1.set('0' + str(datetime.now().month))
 
-        labelYear = ct.CTkLabel(mainFrame, text="Choose year of counting payments")
-        labelYear.grid(row=1, column=3, pady=(0, 10))
-        labelMonth = ct.CTkLabel(mainFrame, text="Choose month of counting payments")
-        labelMonth.grid(row=3, column=3, pady=(0, 10))
+        labelYear1 = ct.CTkLabel(mainFrame, text="Choose year of counting payments(from)")
+        labelYear1.grid(row=1, column=3, pady=(0, 10))
+        labelMonth1 = ct.CTkLabel(mainFrame, text="Choose month of counting payments(from)")
+        labelMonth1.grid(row=3, column=3, pady=(0, 10))
+
+
+
+        # comboboxDate = ct.CTkComboBox(mainFrame, values = )
+        comboboxYear2 = ct.CTkComboBox(mainFrame, values=years, command=self.YearChange2)
+        comboboxYear2.grid(row=0, column=4, pady=(15, 0))
+        comboboxYear2.set(str(datetime.now().year))
+        comboboxMonth2 = ct.CTkComboBox(mainFrame, values=months, command=self.MonthChange2)
+        comboboxMonth2.grid(row=2, column=4, pady=0)
+        comboboxMonth2.set('0' + str(datetime.now().month))
+
+        labelYear2 = ct.CTkLabel(mainFrame, text="Choose year of counting payments(to)")
+        labelYear2.grid(row=1, column=4, pady=(0, 10))
+        labelMonth2 = ct.CTkLabel(mainFrame, text="Choose month of counting payments(to)")
+        labelMonth2.grid(row=3, column=4, pady=(0, 10))
+
 
         # KEYS COMBOBOXES AND LABELS
 
@@ -579,13 +597,20 @@ class MainClass:
             Date.grid_remove()
             checkbox.grid_remove()
 
-    def YearChange(self, value):
-        self.year = value
-        print(self.year)
+    def YearChange1(self, value):
+        self.year1 = value
+        print(self.year1)
 
-    def MonthChange(self, value):
-        self.month = value
-        print(self.month)
+    def MonthChange1(self, value):
+        self.month1 = value
+        print(self.month1)
+    def YearChange2(self, value):
+        self.year2 = value
+        print(self.year2)
+
+    def MonthChange2(self, value):
+        self.month2 = value
+        print(self.month2)
 
     # Next 4 functions is used for copying styles, text, images from workbookA to workbookC
 
@@ -682,7 +707,7 @@ class MainClass:
     def SevenNumberCode(self, fromSheet1, KEY_A, Lieferant, label, progress, endMain, start1, end1,
                         third_sheet, INVOICE_NUMBER_REQUIRED, INVOICE_NUMBER_TO_A, yellowFill, LieferantDict, payments,
                         paymentsStatus, fromSheet2, KEY_B, PAYMENT_DATE_COLUMN, INVOICE_NUMBER_CURRENT, COMISSION_COLUMN
-                        , DESCRIPTION, comission_plus, greenFill, redFill, lightOrangeFill, alphabet):
+                        , DESCRIPTION, comission_plus, greenFill, redFill, lightOrangeFill, alphabet,dates):
 
         for i in fromSheet1.iter_rows():
 
@@ -719,8 +744,9 @@ class MainClass:
                         date = (str(j[PAYMENT_DATE_COLUMN].value)).split('.')
                         year = date[2]
                         month = date[1]
+                        date = month+'.'+year
                         print(year)
-                        if self.year == year and self.month == month:
+                        if date in dates:
 
                             if str(j[INVOICE_NUMBER_CURRENT].value) == "None":
                                 paid_sum = 0
@@ -759,6 +785,8 @@ class MainClass:
 
                             if requested_sum < payments[KEY]:
                                 rest = payments[KEY] - requested_sum
+                                if status_column.value!="PAID":
+                                    self.READY_SUMM += requested_sum
                                 status_column.value = "PAID"
                                 paymentsStatus[KEY] = ['PAID', requested_sum, payments[KEY]]
                                 if self.DoDataOrNot == True:
@@ -771,7 +799,7 @@ class MainClass:
                                 for column in range(1, INVOICE_NUMBER_TO_A + 3):
                                     third_sheet.cell(row=row_number, column=column).fill = greenFill
                                 paid_column.value = requested_sum
-                                self.READY_SUMM += requested_sum
+
                                 self.Clients.append(Client(id, rest))
 
                             # break
@@ -825,6 +853,17 @@ class MainClass:
 
             self.updating_scale(label, progress, counter_of_actions, all_actions,
                                 str(counter_of_actions) + '/' + str(all_actions))
+
+
+            dates = []
+            current_date = datetime(year=int(self.year1), month=int(self.month1), day=1)
+            end_date = datetime(year=int(self.year2), month=int(self.month2), day=1)
+            while current_date <= end_date:
+                dates.append(current_date.strftime("%m.%Y"))
+                current_date += timedelta(days=32)
+                current_date = datetime(year=current_date.year, month=current_date.month, day=1)
+
+
 
             KEY_A = 0
             KEY_B = 0
@@ -991,7 +1030,7 @@ class MainClass:
                                      LieferantDict, payments,
                                      paymentsStatus, fromSheet2, KEY_B, PAYMENT_DATE_COLUMN, INVOICE_NUMBER_CURRENT,
                                      COMISSION_COLUMN
-                                     , DESCRIPTION, comission_plus, greenFill, redFill, lightOrangeFill, alphabet)
+                                     , DESCRIPTION, comission_plus, greenFill, redFill, lightOrangeFill, alphabet,dates)
 
                 counter_of_actions += 1
                 self.updating_scale(label, progress, counter_of_actions, all_actions,
@@ -1030,7 +1069,10 @@ class MainClass:
                                 year = date[2]
                                 month = date[1]
                                 print(year)
-                                if self.year == year and self.month == month:
+                                date = month + '.' + year
+
+                                if date in dates:
+
 
                                     # INSERTING DATA TO TABLE DEPENDING ON PAID SUM
                                     if id not in payments.keys():
@@ -1155,8 +1197,9 @@ class MainClass:
                                 date = (str(j[PAYMENT_DATE_COLUMN].value)).split('.')
                                 year = date[2]
                                 month = date[1]
+                                date = month + '.' + year
                                 print(year)
-                                if self.year == year and self.month == month:
+                                if date in dates:
                                     NUMBER_OF_CHECK += 1  # this line should be only in this algorithm, font copy this, this is a counter for numbers array
 
                                     requested_sum = float(
@@ -1301,7 +1344,7 @@ class MainClass:
                                         if status_column.value != "PAID":
                                             self.READY_SUMM += requested_sum
 
-                                        status_column.value = "PAID"
+
 
                                         for column in range(1, INVOICE_NUMBER_TO_A + 3):
                                             third_sheet.cell(row=row_number, column=column).fill = greenFill
@@ -1322,7 +1365,9 @@ class MainClass:
                                                         value = round(float(requested_sum) * float(val) * 0.01, 1)
                                                     elif float(val) <= 1:
                                                         value = round(float(requested_sum) * float(val), 1)
-                                                self.READY_COMISSION += value
+                                                if (status_column.value!='PAID'):
+                                                    self.READY_COMISSION += value
+                                        status_column.value = "PAID"
 
                                         if self.DoDataOrNot == True:
 
@@ -1491,8 +1536,8 @@ class MainClass:
                                 isMinus = True
                                 minusValue = float(val)
                                 All_requested += float('-' + val)
-                                if str(CELL_DATE.value).split('-')[1] == self.month and str(CELL_DATE.value).split('-')[
-                                    0] == self.year:
+                                if str(CELL_DATE.value).split('-')[1] +'.'+str(CELL_DATE.value).split('-')[
+                                    0] in dates:
                                     All_payed -= float(val)
                                     self.READY_SUMM -= float(val)
                                 val = "".join(
@@ -1504,8 +1549,8 @@ class MainClass:
 
                                     elif float(val) <= 1:
                                         value = round(float(minusValue) * float(val), 1)
-                                    if str(CELL_DATE.value).split('-')[1] == self.month and \
-                                            str(CELL_DATE.value).split('-')[0] == self.year:
+                                    if str(CELL_DATE.value).split('-')[1]+'.'+\
+                                            str(CELL_DATE.value).split('-')[0] in dates:
                                         All_comission -= float(value)
                                         self.READY_COMISSION -= float(value)
                                 self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
