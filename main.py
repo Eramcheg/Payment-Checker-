@@ -6,7 +6,7 @@ from copy import copy
 import customtkinter as ct
 import openpyxl
 import re
-
+import darkdetect
 from xls2xlsx import XLS2XLSX
 from PIL import JpegImagePlugin
 from openpyxl.styles import Color, PatternFill, Font, Border
@@ -35,6 +35,7 @@ class MainClass:
         self.firstfileF2 = ''
         self.secondfileF2 = 'G:\\FIles\\Materials_bug_payments_app\\datev 2023.xlsx'
 
+        self.allRest = 0
         self.colKeyA = data['KeyA']
         self.colKeyB = data['KeyB']
         self.colA = 'B'
@@ -482,7 +483,7 @@ class MainClass:
             Konto.set("Client name from column")
         Konto.grid(row=5, column=3, padx=5)
 
-        LieferantLabel = ct.CTkLabel(mainFrame, text='Select column with\n lieferant in secong table')
+        LieferantLabel = ct.CTkLabel(mainFrame, text='Select column with\n lieferant in main table')
         LieferantLabel.grid(row=6, column=3, padx=5)
         Lieferant = ct.CTkComboBox(mainFrame, values=alphabet, width=185,
                                    command=lambda event: self.changeLieferantColumn(event, data))
@@ -518,7 +519,7 @@ class MainClass:
 
         # COMBOBOX WITH LABLE COMISSION
 
-        lableComission = ct.CTkLabel(mainFrame, text="Select column with comission %")
+        lableComission = ct.CTkLabel(mainFrame, text="Select column with comission %\n in main table")
         lableComission.grid(row=10, column=2, padx=20, pady=(10, 0))
         comboboxSelectCommision = ct.CTkComboBox(mainFrame, values=alphabet,
                                                  command=lambda event: self.valueChangedComission(event, data),
@@ -537,14 +538,17 @@ class MainClass:
         Entry_Row_End_Key_B = ct.CTkEntry(mainFrame, placeholder_text="Enter end B row")
         ConfirmB = ct.CTkButton(mainFrame, text="Confirm B",
                                 command=lambda: self.confirmEntryF2(Entry_Row_End_Key_B, 'B'))
-        ComboboxDate = ct.CTkComboBox(mainFrame, values=alphabet,
+
+
+        lableDate = ct.CTkLabel(mainFrame, text="Select column with dates of payments\n from second table", )
+        ComboboxDate = ct.CTkComboBox(mainFrame, values=alphabet, width=185,
                                       command=lambda event: self.ChangedDateColumn(event, data))
         if self.DataColumn != 'A':
             ComboboxDate.set(self.DataColumn)
         else:
             ComboboxDate.set("Сolumn with Date")
 
-        checkBox = ct.CTkCheckBox(mainFrame, text="Date Column", command=lambda: self.changeDate(checkBox),
+        checkBox = ct.CTkCheckBox(mainFrame, text="Date Column in the main table", command=lambda: self.changeDate(checkBox),
                                   onvalue="on", offvalue="off")
 
         switchROWS = ct.CTkSwitch(master=mainFrame, text="Show edition", onvalue="on", offvalue="off",
@@ -556,7 +560,8 @@ class MainClass:
         checkBox.grid_forget()
         Entry_Row_End_Key_B.grid_forget()
         ConfirmB.grid_forget()
-        ComboboxDate.grid_forget()
+        ComboboxDate.grid(row=11, column=3, padx=20, pady=10)
+        lableDate.grid(row=10, column = 3, padx=20, pady=(10,0))
 
         # BUTTON SYNCHRONIZE WITH PROGRESSBAR AND LABLE OF PROGRESS
 
@@ -588,13 +593,13 @@ class MainClass:
             combobox.grid(row=9, column=0, padx=(20, 5), pady=(5, 0))
             entry.grid(row=9, column=1, padx=(10, 5), pady=(5, 0))
             confirm.grid(row=10, column=0, columnspan=2, padx=20, pady=(5, 15))
-            Date.grid(row=11, column=0, padx=(20, 5), pady=5)
-            checkbox.grid(row=11, column=1, padx=(20, 5), pady=5)
+            #Date.grid(row=11, column=0, padx=(20, 5), pady=5)
+            checkbox.grid(row=11, column=0,columnspan=2, padx=(20, 5), pady=5)
         else:
             combobox.grid_remove()
             entry.grid_remove()
             confirm.grid_remove()
-            Date.grid_remove()
+            #Date.grid_remove()
             checkbox.grid_remove()
 
     def YearChange1(self, value):
@@ -668,19 +673,19 @@ class MainClass:
                 target_cell.comment = copy(source_cell.comment)
 
     def FLAT_SUM(self, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill, paid_column, paid_sum,
-                 id, paymentStatus, Key):
+                 id, paymentStatus, Key, VISIBLE_SUM):
         rest = 0
         if status_column.value != "CORNER":
             status_column.value = "PAID"
         paymentStatus[Key] = ['PAID', paid_sum, paid_sum]
         for column in range(1, INVOICE_NUMBER_TO_A + 3):
             third_sheet.cell(row=row_number, column=column).fill = greenFill
-        paid_column.value = paid_sum
+        paid_column.value = VISIBLE_SUM
         self.READY_SUMM += paid_sum
         self.Clients.append(Client(id, rest))
 
     def PARTICALLY_SUM(self, paid_sum, requested_sum, status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
-                       greenFill, paid_column, id, paymentStatus, Key):
+                       greenFill, paid_column, id, paymentStatus, Key, VISIBLE_SUM):
         rest = paid_sum - requested_sum
 
         if status_column.value != "CORNER":
@@ -688,7 +693,7 @@ class MainClass:
         paymentStatus[Key] = ['PARTIALLY PAID', requested_sum, paid_sum]
         for column in range(1, INVOICE_NUMBER_TO_A + 3):
             third_sheet.cell(row=row_number, column=column).fill = greenFill
-        paid_column.value = paid_sum
+        paid_column.value = VISIBLE_SUM
         self.READY_SUMM += paid_sum
         self.Clients.append(Client(id, rest))
 
@@ -718,6 +723,7 @@ class MainClass:
             self.updating_scale(label, progress, row_number, endMain, str(row_number) + '/' + str(endMain))
 
             if row_number >= start1 and row_number <= end1:
+                print(third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
                 requested_sum = float(
                     third_sheet.cell(row=row_number, column=INVOICE_NUMBER_REQUIRED).value)
                 if requested_sum < 0:
@@ -771,12 +777,12 @@ class MainClass:
 
                                 if requested_sum == payments[KEY]:
                                     self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
-                                                  greenFill, paid_column, payments[KEY], id, paymentsStatus, KEY)
+                                                  greenFill, paid_column, paid_sum, id, paymentsStatus, KEY, payments[KEY])
 
                                 elif requested_sum > payments[KEY] != 0:
-                                    self.PARTICALLY_SUM(payments[KEY], requested_sum, status_column,
+                                    self.PARTICALLY_SUM(paid_sum, requested_sum, status_column,
                                                         INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
-                                                        paid_column, id, paymentsStatus, KEY)
+                                                        paid_column, id, paymentsStatus, KEY, payments[KEY])
 
                                 elif payments[KEY] == 0:
                                     self.NULL_SUM(payments[KEY], requested_sum, status_column, INVOICE_NUMBER_TO_A,
@@ -958,14 +964,18 @@ class MainClass:
 
                 # this cycle select the start and end row based on user choice or without it
                 arr = []
-                for i in fromSheet2.iter_rows():
+
+                #changed here
+                for i in fromSheet1.iter_rows():
                     arr.append(i)
                 start1 = int(self.startB)
                 if int(self.endB) == 1:
                     end1 = len(arr)
                 else:
                     end1 = int(self.endB)
-
+                print("========================================================================================================================")
+                print(end1)
+                print("========================================================================================================================")
                 endMain = 0
                 for i in fromSheet1.iter_rows():
                     endMain += 1
@@ -1102,15 +1112,15 @@ class MainClass:
 
                                         if requested_sum == payments[Key]:
                                             self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet, row_number,
-                                                          greenFill, paid_column, payments[Key], id, paymentsStatus,
-                                                          Key)
+                                                          greenFill, paid_column, paid_sum, id, paymentsStatus,
+                                                          Key, payments[Key])
                                             self.CalculateComission(third_sheet, row_number, INVOICE_NUMBER_TO_A,
                                                                     COMISSION_COLUMN, j, DESCRIPTION, payments[Key])
 
                                         elif requested_sum > payments[Key] != 0:
-                                            self.PARTICALLY_SUM(float(payments[Key]), requested_sum, status_column,
+                                            self.PARTICALLY_SUM(paid_sum, requested_sum, status_column,
                                                                 INVOICE_NUMBER_TO_A, third_sheet, row_number, greenFill,
-                                                                paid_column, id, paymentsStatus, Key)
+                                                                paid_column, id, paymentsStatus, Key, payments[Key])
                                             self.CalculateComission(third_sheet, row_number, INVOICE_NUMBER_TO_A,
                                                                     COMISSION_COLUMN, j, DESCRIPTION, payments[Key])
 
@@ -1241,7 +1251,7 @@ class MainClass:
                                         if requested_sum == all_sum:
                                             self.FLAT_SUM(status_column, INVOICE_NUMBER_TO_A, third_sheet,
                                                           row_number,
-                                                          greenFill, paid_column, all_sum, id, paymentsStatus, Key)
+                                                          greenFill, paid_column, all_sum, id, paymentsStatus, Key, all_sum)
                                             if "möbel" in status_comission or "corner" in status_comission:
                                                 CELL_COMISSION.value = 'CORNER'
                                                 POCET += 1
@@ -1279,7 +1289,7 @@ class MainClass:
                                             self.PARTICALLY_SUM(all_sum, requested_sum, status_column,
                                                                 INVOICE_NUMBER_TO_A, third_sheet, row_number,
                                                                 greenFill,
-                                                                paid_column, id, paymentsStatus, Key)
+                                                                paid_column, id, paymentsStatus, Key, all_sum)
 
                                             if "möbel" in status_comission or "corner" in status_comission:
                                                 CELL_COMISSION.value = 'CORNER'
@@ -1330,6 +1340,7 @@ class MainClass:
 
                                         else:
                                             rest = (all_sum - requested_sum)
+                                            self.allRest += round(rest)
                                             paymentsStatus[Key] = ['PAID', requested_sum, all_sum]
 
                                             if self.DoDataOrNot == True:
@@ -1535,11 +1546,11 @@ class MainClass:
 
                                 isMinus = True
                                 minusValue = float(val)
-                                All_requested += float('-' + val)
-                                if str(CELL_DATE.value).split('-')[1] +'.'+str(CELL_DATE.value).split('-')[
-                                    0] in dates:
-                                    All_payed -= float(val)
-                                    self.READY_SUMM -= float(val)
+                                # All_requested += float('-' + val)
+                                # if str(CELL_DATE.value).split('-')[1] +'.'+str(CELL_DATE.value).split('-')[
+                                #     0] in dates:
+                                    # All_payed -= float(val)
+                                    # self.READY_SUMM -= float(val)
                                 val = "".join(
                                     c for c in str(CELL_COMISSION_PERCENT.value) if c.isdecimal() or c == '.')
                                 if val == str(CELL_COMISSION_PERCENT.value):
@@ -1549,10 +1560,10 @@ class MainClass:
 
                                     elif float(val) <= 1:
                                         value = round(float(minusValue) * float(val), 1)
-                                    if str(CELL_DATE.value).split('-')[1]+'.'+\
-                                            str(CELL_DATE.value).split('-')[0] in dates:
-                                        All_comission -= float(value)
-                                        self.READY_COMISSION -= float(value)
+                                    # if str(CELL_DATE.value).split('-')[1]+'.'+\
+                                    #         str(CELL_DATE.value).split('-')[0] in dates:
+                                    #     All_comission -= float(value)
+                                    #     self.READY_COMISSION -= float(value)
                                 self.errors.append([alphabet[INVOICE_NUMBER_REQUIRED - 1], row_number,
                                                     "There is a letter or special symbol in expected numeric value ('.' is not a special symbol) "])
                             else:
@@ -1592,6 +1603,8 @@ class MainClass:
 
                 # All_comission-=comission_plus
 
+                #Последний этап записи в клетки
+
                 if third_sheet.cell(row=last_row - 1, column=INVOICE_NUMBER_REQUIRED - 1).value == "All requested: ":
                     third_sheet.cell(row=last_row - 1, column=INVOICE_NUMBER_REQUIRED).value = str(round(
                         All_requested - float(third_sheet.cell(row=last_row - 1, column=INVOICE_NUMBER_REQUIRED).value),
@@ -1614,13 +1627,27 @@ class MainClass:
 
                     if str(SUMME_CELL_PAID.value) != 'None':
                         self.READY_SUMM += float(SUMME_CELL_PAID.value)
+                    all_paid = 0  # Initialize the sum of all payments to 0
 
+                    # Assuming 'third_sheet' is your Worksheet object and column O corresponds to index 15
+                    for row in range(1, third_sheet.max_row + 1):  # Iterate through each row in column O
+                        cell_value = third_sheet.cell(row=row,
+                                                      column=15).value  # Get the cell value in column O for the current row
+                        try:
+                            # Try to convert the cell value to a float and add it to all_paid
+                            all_paid += float(cell_value)
+                        except (ValueError, TypeError):
+                            # If the cell value is not a number, skip it
+                            continue
+                    self.READY_SUMM = all_paid
                     SUMME_CELL_PAID.value = str(round(self.READY_SUMM, 1))  # str(round(All_payed + Payments_rest, 1))
                     SUMME_CELL_PAID.fill = darkgreenFill
 
                     SUMME_CELL_COMISSION = third_sheet.cell(row=last_row, column=INVOICE_NUMBER_TO_A + 2)
                     SUMME_CELL_COMISSION.value = round(All_comission, 1)
                     SUMME_CELL_COMISSION.fill = darkgreenFill
+
+
 
                 ERROR_CELL = error_sheet.cell(row=2, column=3)
                 ROW_CELL = error_sheet.cell(row=2, column=2)
@@ -1688,12 +1715,12 @@ class MainClass:
         progress.update()
 
     def valueChangedColumnFromA(self, event, data):
-        data["RequiredPayCol"] = event
+        data["CurrentPayCol"] = event
         self.invoiceDataRequired = event
         print(self.invoiceDataCurrent)
 
     def valueChangedColumnFromB(self, event, data):
-        data["CurrentPayCol"] = event
+        data["RequiredPayCol"] = event
         self.invoiceDataCurrent = event
         print(self.invoiceDataCurrent)
 
